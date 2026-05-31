@@ -11,6 +11,7 @@ single-call `hybrid_search` so its latency/ergonomics can be reported separately
 
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 
@@ -44,11 +45,22 @@ class MnesticAdapter(Adapter):
         self.meta = meta
         self.dim = meta.dim
         self._dir = workdir
-        self._db = mnestic.CozoDbPy("sqlite", str(workdir / "store.db"), "{}")
+        # Backend is selectable via MNESTIC_BACKEND (default: sqlite). The RocksDB backend is
+        # the one mindgraph-rs actually runs on, so latency claims that gate the bridge-level
+        # perf items (#4 batched index put, #7 HNSW multi_get) must be re-measured on it.
+        # RocksDB wants a *directory* path; sqlite wants a *file*.
+        backend = os.environ.get("MNESTIC_BACKEND", "sqlite").lower()
+        if backend == "rocksdb":
+            path = str(workdir / "store.rocksdb")
+        else:
+            path = str(workdir / "store.db")
+        self._backend = backend
+        self._db = mnestic.CozoDbPy(backend, path, "{}")
         try:
-            self.version = getattr(mnestic, "__version__", "")
+            base = getattr(mnestic, "__version__", "") or ""
         except Exception:  # noqa: BLE001
-            self.version = ""
+            base = ""
+        self.version = f"{base}({backend})" if base else f"({backend})"
         self._run(f":create chunk {{ cid: String => text: String, emb: <F32; {self.dim}> }}")
         self._run(":create edge { src: String, dst: String }")
         self._run(":create mention { cid: String, eid: String }")

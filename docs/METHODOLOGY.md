@@ -114,6 +114,28 @@ Scales (`configs/scales.yaml`): `tiny` (CI smoke), `small` (reference), `medium`
 Numbers are **hardware-specific**; the reference run's environment is recorded in
 `RESULTS.md`. Re-run on your own hardware to compare.
 
+### RocksDB backend + real embeddings (latency validation)
+
+The reference run above uses the default SQLite-backed mnestic wheel and text-derived
+synthetic embeddings (recall-valid by construction). To validate **latency on the backend
+`mindgraph-rs` actually runs** (RocksDB) with realistic dense float32 vectors, build the
+wheel with the RocksDB feature, generate a `--real-embeddings` workload, and select the
+backend via `MNESTIC_BACKEND`:
+
+```bash
+pip install -e ".[real-embeddings]"
+(cd ../mnestic/cozo-lib-python && maturin develop --release --features compact,storage-rocksdb)
+
+hybrid-recall gen --scale small --real-embeddings
+MNESTIC_BACKEND=rocksdb hybrid-recall run --scale small --engines mnestic,sqlite,duckdb,lancedb --report
+```
+
+A captured run is committed at `results/sample/small-rocksdb-real.json`. **Read its recall as
+a caveat, not a result**: the workload text is synthetic vocabulary, so a real
+sentence-transformer cannot embed it meaningfully and the vector signal collapses — see the
+recall caveat in [COMPARISON.md](COMPARISON.md). The valid takeaway from that run is latency
+and index-build cost on the production backend.
+
 ## Honest limitations
 
 - **Synthetic data** approximates, but is not, a real corpus. The `--real-embeddings` mode

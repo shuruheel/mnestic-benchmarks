@@ -71,15 +71,33 @@ example of the bench's purpose: it localized the deficit to FTS, the fix shipped
 re-run validated it.)
 
 On **latency**, mnestic's **native `hybrid_search` is its fast path and the point of Bet 1a**:
-it fuses vector + full-text + graph in **one** call at ~42 ms p50 (small scale), vs ~175 ms
+it fuses vector + full-text + graph in **one** call at ~41 ms p50 (small scale), vs ~162–175 ms
 for the decomposed three-query path that a non-fusing engine forces — the "one call vs three"
-win, on a capability (3-way fusion) no other engine here offers at all. Two latency lessons
-the bench drove out: (1) the first BM25 cut made full-text ~10× slower via a per-query
-`avgdl` index scan; an O(1) durable doc-stats counter restored it (decomposed p50 927→175 ms,
-p99 2.9 s→258 ms). (2) These numbers are on the **SQLite-backed** wheel (`pip install
-mnestic`); the RocksDB backend is faster for point lookups, and disk-resident HNSW
-neighbor-fetch (#7/#10 on the roadmap) is the next lever. All real, documented, and
-benchmark-grounded — not artifacts.
+win, on a capability (3-way fusion) no other engine here offers at all. Three latency lessons
+the bench drove out:
+
+1. The first BM25 cut made full-text ~10× slower via a per-query `avgdl` index scan; an O(1)
+   durable doc-stats counter restored it (decomposed p50 927→175 ms, p99 2.9 s→258 ms on the
+   SQLite wheel).
+2. **Re-measured on the RocksDB backend** — the one `mindgraph-rs` actually runs — with **real
+   sentence-transformer embeddings** (recorded in `results/sample/small-rocksdb-real.json`):
+   decomposed **p50 162 ms, p99 181 ms** (p50 marginally better than the SQLite wheel, and the
+   **tail markedly tighter — 181 vs 258 ms p99** — thanks to RocksDB's persistent page cache),
+   with native 3-way fusion at **41 ms p50**. The latency claims hold on the production backend.
+3. That same re-measure surfaced the next lever directly: HNSW+FTS **index build took ~89 s**
+   for 40k vectors (vs <0.1 s for sqlite-vec's no-build exact scan). That is exactly what the
+   bridge-gated build-path items target — **#4** (batch the per-index `.put()` loop) and **#7**
+   (HNSW `multi_get` for neighbor fetch) — now backed by a measured number on the real backend.
+
+All real, documented, and benchmark-grounded — not artifacts.
+
+> *Recall caveat for the RocksDB run:* its recall@10 is **0.88, not the synthetic run's 0.95**,
+> because the workload **text is synthetic vocabulary** — a real sentence-transformer cannot
+> embed `word4821 word221 …` meaningfully, which collapses the vector signal (LanceDB's k-means
+> even warns of duplicate vectors). Treat that run as a **latency/backend validation on
+> realistic dense float32 vectors**, not a recall result. The recall headline above stands on
+> the text-derived synthetic embeddings, where the vector signal is meaningful by construction;
+> a `--real-embeddings` run on *real* prose would not see this collapse.
 
 ### SQLite (sqlite-vec + FTS5)
 All three signals in a single file. **sqlite-vec does an exact brute-force KNN scan** — so
