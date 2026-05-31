@@ -1,0 +1,49 @@
+# Workload scales for the hybrid-recall benchmark.
+# entities  : number of typed knowledge-graph nodes (Person/Concept/Event/Org)
+# edges      : number of typed relations between entities (graph structure)
+# chunks     : number of "memory chunk" documents (the recall corpus)
+# dim        : embedding dimensionality
+# queries    : size of the seeded query bank (shared across all engines)
+# graph_hops : k for k-hop graph proximity in the recall task
+# k          : top-k cutoff for recall@k and the returned result set
+# clusters   : number of planted semantic clusters (controls vector neighborhood structure)
+
+tiny:        # CI smoke test — must run in seconds
+  entities: 500
+  edges: 2500
+  chunks: 2000
+  dim: 64
+  queries: 100
+  graph_hops: 2
+  k: 10
+  clusters: 16
+
+small:       # default for the reference results snapshot
+  entities: 10000
+  edges: 50000
+  chunks: 40000
+  dim: 384
+  queries: 1000
+  graph_hops: 2
+  k: 10
+  clusters: 64
+
+medium:
+  entities: 100000
+  edges: 500000
+  chunks: 400000
+  dim: 384
+  queries: 1000
+  graph_hops: 2
+  k: 10
+  clusters: 256
+
+large:
+  entities: 1000000
+  edges: 5000000
+  chunks: 4000000
+  dim: 384
+  queries: 1000
+  graph_hops: 2
+  k: 10
+  clusters: 1024

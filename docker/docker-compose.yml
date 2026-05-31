@@ -1,0 +1,45 @@
+# Phase-2 server engines for the hybrid-recall benchmark.
+#
+#   docker compose -f docker/docker-compose.yml up -d
+#   pip install -e ".[server]"
+#   hybrid-recall run --scale small --engines neo4j,qdrant
+#
+# These are NOT part of the embedded reference run. Defaults match the env vars the
+# adapters read (NEO4J_URI/USER/PASSWORD, QDRANT_URL, ARCADEDB_URL).
+
+services:
+  neo4j:
+    image: neo4j:5.26
+    ports:
+      - "7474:7474"   # http
+      - "7687:7687"   # bolt
+    environment:
+      NEO4J_AUTH: "neo4j/password"
+      NEO4J_server_memory_heap_max__size: "2G"
+    volumes:
+      - neo4j_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+  arcadedb:
+    image: arcadedata/arcadedb:latest
+    ports:
+      - "2480:2480"   # http
+      - "2424:2424"   # binary
+    environment:
+      JAVA_OPTS: >-
+        -Darcadedb.server.rootPassword=password
+        -Darcadedb.server.defaultDatabases=bench[root]
+    volumes:
+      - arcadedb_data:/home/arcadedb/databases
+
+volumes:
+  neo4j_data:
+  qdrant_data:
+  arcadedb_data:

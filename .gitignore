@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Benchmark outputs (the committed sample lives under results/sample/)
+results/*
+!results/sample/
+!results/.gitkeep
+
+# Generated workloads & engine working dirs
+workloads/
+.bench_work/
+*.db
+*.db-*
+*.kuzu/
+*.lance/
+*.sqlite
+
+# OS
+.DS_Store

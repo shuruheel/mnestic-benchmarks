@@ -1,0 +1,65 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hybrid-recall-bench"
+version = "0.1.0"
+description = "A public, reproducible benchmark for hybrid recall (vector + full-text + graph) across embedded and server databases. Reference engine: mnestic."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "mnestic authors" }]
+keywords = ["benchmark", "hybrid-search", "vector", "graph", "full-text", "rag", "agentic-memory"]
+
+# Harness-only deps. Engines are optional extras so you install only what you run.
+dependencies = [
+    "numpy>=1.24",
+    "psutil>=5.9",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+mnestic = ["mnestic>=0.8.2"]
+sqlite = ["sqlite-vec>=0.1.6", "apsw>=3.45"]  # apsw: loadable-extension support (stdlib sqlite3 often lacks it)
+duckdb = ["duckdb>=1.1.0"]
+kuzu = ["kuzu==0.10.0"]            # archived Oct 2025; last release, still installable
+lancedb = ["lancedb>=0.15"]        # uses LanceDB's native FTS (use_tantivy=False)
+server = ["neo4j>=5.20", "qdrant-client>=1.10", "requests>=2.31"]  # phase 2
+real-embeddings = ["sentence-transformers>=2.6"]
+plots = ["matplotlib>=3.7"]
+embedded = [
+    "mnestic>=0.8.2",
+    "sqlite-vec>=0.1.6",
+    "apsw>=3.45",
+    "duckdb>=1.1.0",
+    "kuzu==0.10.0",
+    "lancedb>=0.15",
+]
+all = [
+    "mnestic>=0.8.2",
+    "sqlite-vec>=0.1.6",
+    "apsw>=3.45",
+    "duckdb>=1.1.0",
+    "kuzu==0.10.0",
+    "lancedb>=0.15",
+    "neo4j>=5.20",
+    "qdrant-client>=1.10",
+    "requests>=2.31",
+    "matplotlib>=3.7",
+]
+dev = ["pytest>=8.0", "ruff>=0.5"]
+
+[project.scripts]
+hybrid-recall = "hybrid_recall.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/shuruheel/mnestic"
+Repository = "https://github.com/shuruheel/mnestic-benchmarks"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hybrid_recall"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

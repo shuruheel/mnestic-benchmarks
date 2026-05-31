@@ -1,0 +1,44 @@
+name: bench-smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install (pip-installable embedded engines + dev)
+        # mnestic builds from the sibling repo (maturin) and Kuzu's extension host is
+        # offline post-archival, so CI exercises sqlite + duckdb + lancedb.
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[sqlite,duckdb,lancedb,plots,dev]"
+
+      - name: Lint
+        run: ruff check hybrid_recall
+
+      - name: Unit tests (workload, ground truth, fusion, adapters)
+        run: pytest -q
+
+      - name: End-to-end smoke (tiny scale)
+        run: |
+          hybrid-recall gen --scale tiny
+          hybrid-recall run --scale tiny --engines sqlite,duckdb,lancedb --report --plots
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiny-results
+          path: |
+            results/*.json
+            docs/RESULTS.md
+            docs/assets/*.png
