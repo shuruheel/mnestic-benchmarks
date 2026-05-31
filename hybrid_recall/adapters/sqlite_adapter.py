@@ -37,6 +37,9 @@ class SQLiteAdapter(Adapter):
         fusion_locus="app-side",
         engines_needed=1,
         embedded=True,
+        transactional=True,
+        time_travel=False,
+        incremental_index=True,  # vec0 + FTS5 are updated by the INSERT itself
         notes="sqlite-vec is a brute-force exact KNN scan (no ANN index); FTS5 for BM25; "
         "graph via recursive CTEs; fusion done in application code.",
     )
@@ -85,6 +88,7 @@ class SQLiteAdapter(Adapter):
             ments = [(c.id, eid) for c in wl.chunks for eid in c.entity_ids]
             cur.executemany("INSERT INTO mentions (cid, eid) VALUES (?, ?)", ments)
             rows += len(ments)
+        self._next_rid = len(wl.chunks)  # next free rowid for incremental upserts
         return IngestStats(rows=rows, seconds=time.perf_counter() - t0)
 
     @staticmethod
@@ -139,6 +143,21 @@ class SQLiteAdapter(Adapter):
             return [r[0] for r in rows]
 
         return bfs_chunk_ranking(neighbors, chunks_of, spec.seed_entity, spec.hops, spec.pool_n)
+
+    def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
+        con = self._con
+        rid = self._next_rid
+        self._next_rid += 1
+        with con:
+            con.execute(
+                "INSERT INTO vchunks (rowid, embedding) VALUES (?, ?)",
+                (rid, sqlite_vec.serialize_float32([float(x) for x in vector])),
+            )
+            con.execute("INSERT INTO chunks (rid, cid, text) VALUES (?, ?, ?)", (rid, cid, text))
+            con.execute("INSERT INTO fchunks (rowid, text) VALUES (?, ?)", (rid, text))
+            con.executemany(
+                "INSERT INTO mentions (cid, eid) VALUES (?, ?)", [(cid, e) for e in entity_ids]
+            )
 
     def teardown(self) -> None:
         try:

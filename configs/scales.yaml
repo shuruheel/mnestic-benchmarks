@@ -17,6 +17,7 @@ tiny:        # CI smoke test — must run in seconds
   graph_hops: 2
   k: 10
   clusters: 16
+  incremental: 50
 
 small:       # default for the reference results snapshot
   entities: 10000
@@ -27,6 +28,7 @@ small:       # default for the reference results snapshot
   graph_hops: 2
   k: 10
   clusters: 64
+  incremental: 200
 
 medium:
   entities: 100000
@@ -37,6 +39,7 @@ medium:
   graph_hops: 2
   k: 10
   clusters: 256
+  incremental: 500
 
 large:
   entities: 1000000
@@ -47,3 +50,4 @@ large:
   graph_hops: 2
   k: 10
   clusters: 1024
+  incremental: 1000

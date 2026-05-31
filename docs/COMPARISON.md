@@ -27,7 +27,7 @@ of the box and no graph traversal; this pass wires its vector signal only.
 
 ## The headline
 
-Three signals, fused, is the task. Two things separate the field:
+Three signals, fused, is the task. Three things separate the field:
 
 1. **Does the engine have a graph at all?** A pure vector store (LanceDB, Qdrant) cannot
    contribute the graph-proximity signal, and on this workload that signal is
@@ -43,6 +43,15 @@ Three signals, fused, is the task. Two things separate the field:
    fuses vector+FTS natively but needs a *second* system for graph; Qdrant needs separate
    systems for full-text and graph.
 
+3. **Can it absorb a memory and recall it immediately?** Agentic memory is written
+   continuously, so *read-your-writes* matters as much as batch recall. The architecture-axes
+   table in [RESULTS.md](RESULTS.md) measures it: mnestic, SQLite and LanceDB find a
+   just-upserted memory on every signal they support, but **DuckDB's full-text index is a
+   build-time snapshot** — a new memory is **unsearchable by keyword (FTS read-your-writes =
+   0%)** until the index is rebuilt. How badly that hurts depends on the query: when vector
+   and graph can carry it the fused result still lands the memory, but any keyword-led recall
+   of recent memories silently misses. A drag race on a static corpus hides this entirely.
+
 ## Per-engine notes
 
 ### mnestic
@@ -53,22 +62,24 @@ here that serves all three signals from one embedded store**, and it comfortably
 graph-less vector engines on fused recall.
 
 Where it stands, measured honestly against the exact oracle (component agreement at the
-`small` scale): **vector ≈ 0.99 and graph = 1.00 — essentially perfect**, so mnestic
-reproduces those two signals as well as anything. Its **full-text agreement is lower (~0.72)**:
-cozo's FTS relevance scoring differs from the textbook Okapi BM25 the oracle uses (the right
-documents are retrieved, but ranked differently), and that gap accounts for most of the
-distance between mnestic's fused recall and the BM25-native SQL engines. We query FTS with a
-per-term sum aggregation — the idiomatic way to get ranked disjunctive FTS in Datalog.
+`small` scale): **vector ≈ 0.99 and graph = 1.00 — essentially perfect**. Full-text was
+the one weak leg (~0.72) in the first run; the fork then upgraded `::fts` to **Okapi BM25**
+(tunable k1/b, single-query multi-term scoring) — see CHANGELOG-FORK — which lifts full-text
+agreement to ~0.88 and **fused recall@10 from ~0.75 to ~0.96, at parity with the BM25-native
+SQL engines**. The remaining gap is HNSW approximation, not scoring. (This is a worked
+example of the bench's purpose: it localized the deficit to FTS, the fix shipped, and the
+re-run validated it.)
 
-On **latency**, the scored path decomposes into separate component queries, and on the
-**SQLite-backed** wheel (what `pip install mnestic` ships) each Datalog script carries
-parse + transaction overhead, so per-query latency at scale is higher than the C-level SQL
-engines. mnestic's **`hybrid_search` is its fast path** — a single optimized call that, in the
-reference run, is roughly an order of magnitude faster than its own decomposed component
-path (though LanceDB's native fusion is faster still in absolute terms). Its RocksDB backend
-— not used here — is faster for point lookups, and the current HNSW is disk-resident with
-known serial-neighbor-fetch overhead at scale (note the heavy latency tail). These are real,
-documented characteristics, not benchmark artifacts.
+On **latency**, mnestic's **native `hybrid_search` is its fast path and the point of Bet 1a**:
+it fuses vector + full-text + graph in **one** call at ~42 ms p50 (small scale), vs ~175 ms
+for the decomposed three-query path that a non-fusing engine forces — the "one call vs three"
+win, on a capability (3-way fusion) no other engine here offers at all. Two latency lessons
+the bench drove out: (1) the first BM25 cut made full-text ~10× slower via a per-query
+`avgdl` index scan; an O(1) durable doc-stats counter restored it (decomposed p50 927→175 ms,
+p99 2.9 s→258 ms). (2) These numbers are on the **SQLite-backed** wheel (`pip install
+mnestic`); the RocksDB backend is faster for point lookups, and disk-resident HNSW
+neighbor-fetch (#7/#10 on the roadmap) is the next lever. All real, documented, and
+benchmark-grounded — not artifacts.
 
 ### SQLite (sqlite-vec + FTS5)
 All three signals in a single file. **sqlite-vec does an exact brute-force KNN scan** — so
@@ -81,6 +92,11 @@ without loadable-extension support, so the adapter uses `apsw`.
 Analytical engine with an `vss` HNSW index and an `fts` BM25 index. Strong recall and
 ingest. Caveat: **HNSW persistence is experimental** (`hnsw_enable_experimental_persistence`)
 with a documented corruption risk on crash. Graph via recursive CTEs; app-side fusion.
+Second caveat the freshness axis exposes: its **FTS index is a build-time snapshot** — a
+newly-inserted memory is unsearchable by keyword until the index is rebuilt (read-your-writes
+full-text = 0%). Vector and graph still find it, so fused recall of a fresh memory mostly
+survives at this scale, but keyword-led recall of recent memories silently misses. Fine for
+static corpora, a real problem for continuously-written agent memory.
 
 ### Kuzu
 An embedded property-graph DB with Cypher, an HNSW vector index, and FTS — on paper an

@@ -39,6 +39,9 @@ class Capabilities:
     fusion_locus: str            # "native" | "app-side"
     engines_needed: int          # distinct systems a real deployment needs for all 3 signals
     embedded: bool               # in-process, no server?
+    transactional: bool = False  # writes (chunk + edges + indexes) commit atomically
+    time_travel: bool = False    # query memory as-of a past point in time
+    incremental_index: bool = False  # claims all indexes update on write (no rebuild)
     notes: str = ""
 
 
@@ -96,6 +99,12 @@ class Adapter(abc.ABC):
 
     def teardown(self) -> None:  # noqa: B027  (optional)
         pass
+
+    def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
+        """Insert a single new memory (chunk + its embedding + links to existing entities)
+        the way an agent writes one at runtime. Used by the read-your-writes / freshness
+        axis. Override per engine; default signals "not supported"."""
+        raise NotImplementedError
 
     # --- native component retrievals (override what the engine supports) -
     def search_vector(self, spec: QuerySpec) -> list[str]:

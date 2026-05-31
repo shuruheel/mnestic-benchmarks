@@ -70,7 +70,9 @@ def cmd_run(args: argparse.Namespace) -> int:
     workdir = Path(args.workdir) if args.workdir else (ROOT / ".bench_work" / args.scale)
     workdir.mkdir(parents=True, exist_ok=True)
     print(f"running engines {engines} on scale '{args.scale}'", flush=True)
-    payload = run_suite(wl, gt, engines, workdir, concurrency=args.concurrency)
+    payload = run_suite(
+        wl, gt, engines, workdir, concurrency=args.concurrency, max_queries=args.max_queries or None
+    )
     path = write_results(payload, RESULTS)
     print(f"wrote {path}", flush=True)
     if args.report:
@@ -122,6 +124,12 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--engines", default="", help="comma list; default = embedded engines")
     r.add_argument("--workdir", default="", help="engine working dir (default .bench_work/<scale>)")
     r.add_argument("--concurrency", type=int, default=8)
+    r.add_argument(
+        "--max-queries",
+        type=int,
+        default=0,
+        help="cap the measured query set (0 = full bank); percentiles/recall stay solid at ~400",
+    )
     r.add_argument("--report", action="store_true", help="render RESULTS.md after running")
     r.add_argument("--plots", action="store_true", help="also render plots (needs [plots])")
     r.set_defaults(func=cmd_run)

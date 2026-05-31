@@ -34,8 +34,12 @@ class LanceDBAdapter(Adapter):
         fusion_locus="native",
         engines_needed=2,  # needs a separate graph store for the graph signal
         embedded=True,
+        transactional=False,   # no multi-table atomic write (single table; no graph)
+        time_travel=False,     # has dataset-version snapshots, not record-level validity
+        incremental_index=True,  # measured: new rows are searchable on both signals at once
         notes="Native vector + full-text with a built-in RRF reranker (single-call hybrid). "
-        "No graph traversal — the graph signal is simply unavailable.",
+        "No graph traversal — the graph signal is unavailable. New rows are immediately "
+        "searchable (vector + FTS); has version-level snapshots but not record-level time-travel.",
     )
 
     def setup(self, meta: WorkloadMeta, workdir: Path) -> None:
@@ -98,6 +102,11 @@ class LanceDBAdapter(Adapter):
             .to_list()
         )
         return [r["cid"] for r in rows]
+
+    def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
+        # entity_ids ignored — LanceDB has no graph. Vector is searchable immediately;
+        # the FTS index covers only rows present at build time (freshness will show this).
+        self._tbl.add([{"cid": cid, "text": text, "vector": [float(x) for x in vector]}])
 
     def native_hybrid(self, spec: QuerySpec) -> list[str] | None:
         rows = (

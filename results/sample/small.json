@@ -12,6 +12,7 @@
     "n_edges": 50000,
     "n_chunks": 40000,
     "n_queries": 1000,
+    "n_incremental": 200,
     "real_embeddings": false
   },
   "environment": {
@@ -19,7 +20,7 @@
     "platform": "macOS-26.5-arm64-arm-64bit-Mach-O",
     "processor": "arm"
   },
-  "generated_at": "2026-05-31T00:39:41Z",
+  "generated_at": "2026-05-31T03:29:42Z",
   "results": [
     {
       "engine": "mnestic",
@@ -33,35 +34,50 @@
         "fusion_locus": "native",
         "engines_needed": 1,
         "embedded": true,
-        "notes": "Single embedded engine for vector + full-text + Datalog graph; hybrid_search() fuses vector+FTS in one call."
+        "transactional": true,
+        "time_travel": true,
+        "incremental_index": true,
+        "notes": "Single embedded engine for vector + full-text + Datalog graph; hybrid_search() fuses vector+FTS in one call; time-travel via Validity."
       },
       "ok": true,
       "error": "",
-      "recall_at_k": 0.753,
+      "recall_at_k": 0.95425,
       "recall_k": 10,
-      "ingest_rows": 169746,
-      "ingest_seconds": 5.9295448750053765,
-      "ingest_rows_per_sec": 28627.154963532692,
-      "build_seconds": 54.394727082995814,
-      "disk_mb": 402.078125,
-      "build_peak_rss_mb": 528.03125,
+      "ingest_rows": 349492,
+      "ingest_seconds": 6.901671832994907,
+      "ingest_rows_per_sec": 50638.74499641946,
+      "build_seconds": 46.031445624998014,
+      "disk_mb": 417.1875,
+      "build_peak_rss_mb": 616.40625,
       "latency_ms": {
-        "p50": 325.2541874971939,
-        "p95": 1354.0605059515653,
-        "p99": 2919.030591575719
+        "p50": 174.78372950427,
+        "p95": 227.50828750467915,
+        "p99": 258.1849039968074
       },
-      "mean_latency_ms": 550.4460109989959,
-      "qps_serial": 1.816708596334662,
-      "qps_concurrent": 16.253209325394483,
+      "mean_latency_ms": 183.32226770991838,
+      "qps_serial": 5.454874699577462,
+      "qps_concurrent": 18.816522679459965,
       "concurrency": 8,
-      "query_peak_rss_mb": 43.953125,
+      "query_peak_rss_mb": 139.546875,
       "avg_round_trips": 3,
-      "n_queries": 1000,
+      "n_queries": 400,
       "native_fusion_latency_ms": {
-        "p50": 41.23179149974021,
-        "p95": 53.44939405003972,
-        "p99": 92.31312700190718
-      }
+        "p50": 41.55037549935514,
+        "p95": 52.15393190301257,
+        "p99": 76.18302565846531
+      },
+      "native_fusion_recall": 0.8726666666666667,
+      "native_fusion_signals": 3,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 10.413290998258162,
+        "p95": 15.915903903078286,
+        "p99": 20.01210017959239
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 1.0,
+      "freshness_graph": 1.0,
+      "freshness_fused": 1.0
     },
     {
       "engine": "sqlite",
@@ -75,31 +91,46 @@
         "fusion_locus": "app-side",
         "engines_needed": 1,
         "embedded": true,
+        "transactional": true,
+        "time_travel": false,
+        "incremental_index": true,
         "notes": "sqlite-vec is a brute-force exact KNN scan (no ANN index); FTS5 for BM25; graph via recursive CTEs; fusion done in application code."
       },
       "ok": true,
       "error": "",
-      "recall_at_k": 0.9995,
+      "recall_at_k": 1.0,
       "recall_k": 10,
       "ingest_rows": 169746,
-      "ingest_seconds": 1.5068620000020019,
-      "ingest_rows_per_sec": 112648.66988468386,
-      "build_seconds": 0.0677681249944726,
+      "ingest_seconds": 1.572406500003126,
+      "ingest_rows_per_sec": 107953.00070284786,
+      "build_seconds": 0.0706374159999541,
       "disk_mb": 71.58203125,
-      "build_peak_rss_mb": 298.65625,
+      "build_peak_rss_mb": 223.90625,
       "latency_ms": {
-        "p50": 21.957478998956503,
-        "p95": 22.814311045658542,
-        "p99": 23.73468533369305
+        "p50": 22.118270997452782,
+        "p95": 26.358953499948242,
+        "p99": 40.763943664205726
       },
-      "mean_latency_ms": 21.991321790934308,
-      "qps_serial": 45.47248271416953,
+      "mean_latency_ms": 22.80284883487184,
+      "qps_serial": 43.85416959264864,
       "qps_concurrent": 0.0,
       "concurrency": 0,
-      "query_peak_rss_mb": 300.078125,
+      "query_peak_rss_mb": 211.671875,
       "avg_round_trips": 3,
-      "n_queries": 1000,
-      "native_fusion_latency_ms": {}
+      "n_queries": 400,
+      "native_fusion_latency_ms": {},
+      "native_fusion_recall": null,
+      "native_fusion_signals": 0,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 1.1325419982313178,
+        "p95": 1.6081002999271723,
+        "p99": 5.861661864910292
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 1.0,
+      "freshness_graph": 1.0,
+      "freshness_fused": 1.0
     },
     {
       "engine": "duckdb",
@@ -113,31 +144,46 @@
         "fusion_locus": "app-side",
         "engines_needed": 1,
         "embedded": true,
-        "notes": "VSS HNSW persistence is experimental (hnsw_enable_experimental_persistence); FTS via PRAGMA create_fts_index/match_bm25; graph via recursive CTEs; app-side fusion."
+        "transactional": true,
+        "time_travel": false,
+        "incremental_index": false,
+        "notes": "VSS HNSW persistence is experimental (hnsw_enable_experimental_persistence); FTS index is a build-time snapshot (PRAGMA create_fts_index) \u2014 new rows are not searchable until it is rebuilt; graph via recursive CTEs; app-side fusion."
       },
       "ok": true,
       "error": "",
-      "recall_at_k": 0.9584,
+      "recall_at_k": 0.95725,
       "recall_k": 10,
       "ingest_rows": 169746,
-      "ingest_seconds": 915.9758910000019,
-      "ingest_rows_per_sec": 185.31710459615104,
-      "build_seconds": 2.4144256670042523,
-      "disk_mb": 126.01171875,
-      "build_peak_rss_mb": 387.015625,
+      "ingest_seconds": 941.1992128330021,
+      "ingest_rows_per_sec": 180.35076706988087,
+      "build_seconds": 2.790489291997801,
+      "disk_mb": 128.01171875,
+      "build_peak_rss_mb": 340.28125,
       "latency_ms": {
-        "p50": 66.90458350203699,
-        "p95": 84.57141840153781,
-        "p99": 91.3538075843826
+        "p50": 68.41002049623057,
+        "p95": 89.31141665052563,
+        "p99": 116.67567824879366
       },
-      "mean_latency_ms": 66.97809213601431,
-      "qps_serial": 14.930255074588743,
+      "mean_latency_ms": 69.33515593000266,
+      "qps_serial": 14.422697787101692,
       "qps_concurrent": 0.0,
       "concurrency": 0,
-      "query_peak_rss_mb": 400.359375,
+      "query_peak_rss_mb": 269.328125,
       "avg_round_trips": 3,
-      "n_queries": 1000,
-      "native_fusion_latency_ms": {}
+      "n_queries": 400,
+      "native_fusion_latency_ms": {},
+      "native_fusion_recall": null,
+      "native_fusion_signals": 0,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 23.74608399986755,
+        "p95": 25.559996398078507,
+        "p99": 50.530229336291214
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 0.0,
+      "freshness_graph": 1.0,
+      "freshness_fused": 0.99
     },
     {
       "engine": "lancedb",
@@ -151,35 +197,50 @@
         "fusion_locus": "native",
         "engines_needed": 2,
         "embedded": true,
-        "notes": "Native vector + full-text with a built-in RRF reranker (single-call hybrid). No graph traversal \u2014 the graph signal is simply unavailable."
+        "transactional": false,
+        "time_travel": false,
+        "incremental_index": true,
+        "notes": "Native vector + full-text with a built-in RRF reranker (single-call hybrid). No graph traversal \u2014 the graph signal is unavailable. New rows are immediately searchable (vector + FTS); has version-level snapshots but not record-level time-travel."
       },
       "ok": true,
       "error": "",
-      "recall_at_k": 0.513,
+      "recall_at_k": 0.50075,
       "recall_k": 10,
       "ingest_rows": 40000,
-      "ingest_seconds": 1.2677282500008005,
-      "ingest_rows_per_sec": 31552.503464346355,
-      "build_seconds": 7.267295290999755,
-      "disk_mb": 65.11914539337158,
-      "build_peak_rss_mb": 825.125,
+      "ingest_seconds": 1.415543291994254,
+      "ingest_rows_per_sec": 28257.701637402388,
+      "build_seconds": 8.517068833003577,
+      "disk_mb": 65.11676502227783,
+      "build_peak_rss_mb": 643.46875,
       "latency_ms": {
-        "p50": 3.3113124991359655,
-        "p95": 4.1737315459613455,
-        "p99": 4.867341254212079
+        "p50": 3.4208955003123265,
+        "p95": 4.344659001435501,
+        "p99": 12.214963750084273
       },
-      "mean_latency_ms": 3.48379087090143,
-      "qps_serial": 287.0436363883261,
+      "mean_latency_ms": 3.820395309940068,
+      "qps_serial": 261.7530173901526,
       "qps_concurrent": 0.0,
       "concurrency": 0,
-      "query_peak_rss_mb": 836.421875,
+      "query_peak_rss_mb": 328.828125,
       "avg_round_trips": 2,
-      "n_queries": 1000,
+      "n_queries": 400,
       "native_fusion_latency_ms": {
-        "p50": 1.9722294964594766,
-        "p95": 2.5501249972876394,
-        "p99": 3.0977595028525675
-      }
+        "p50": 1.922708503116155,
+        "p95": 2.398012795674731,
+        "p99": 2.7310107536322903
+      },
+      "native_fusion_recall": 0.456,
+      "native_fusion_signals": 2,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 1.9230830002925359,
+        "p95": 2.306728896655841,
+        "p99": 3.34841666015566
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 1.0,
+      "freshness_graph": null,
+      "freshness_fused": 1.0
     },
     {
       "engine": "kuzu",
@@ -193,6 +254,9 @@
         "fusion_locus": "app-side",
         "engines_needed": 1,
         "embedded": true,
+        "transactional": false,
+        "time_travel": false,
+        "incremental_index": false,
         "notes": "Embedded graph DB: HNSW vector index + FTS + Cypher variable-length traversal; app-side fusion. Archived Oct 2025 (v0.10.0 final); RyuGraph is the active fork."
       },
       "ok": false,
@@ -213,7 +277,15 @@
       "query_peak_rss_mb": 0.0,
       "avg_round_trips": 0.0,
       "n_queries": 1000,
-      "native_fusion_latency_ms": {}
+      "native_fusion_latency_ms": {},
+      "native_fusion_recall": null,
+      "native_fusion_signals": 0,
+      "n_incremental": 0,
+      "incremental_upsert_ms": {},
+      "freshness_vector": null,
+      "freshness_fts": null,
+      "freshness_graph": null,
+      "freshness_fused": null
     }
   ]
 }

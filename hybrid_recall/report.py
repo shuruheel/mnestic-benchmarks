@@ -79,17 +79,60 @@ def render_markdown(payload: dict) -> str:
     # --- native fusion highlight ---
     nat = [r for r in ok if r.get("native_fusion_latency_ms")]
     if nat:
-        lines.append("\n## Native single-call fusion (vector + full-text)\n")
+        lines.append("\n## Native single-call fusion\n")
         lines.append(
-            "Engines that fuse vector and full-text in **one** engine call, vs the app-side "
-            "RRF used by the rest. Reported for ergonomics/latency only — not part of the "
-            "recall scoring above.\n"
+            "One engine call that fuses signals internally (RRF inside the engine), vs the "
+            "app-side fusion + separate queries the rest need. `signals` is how many of the "
+            "three are fused in that one call. Recall here is measured against the **same "
+            "oracle** as the main table — so when a 3-signal native call matches the decomposed "
+            f"recall@{meta['k']} at a fraction of the latency, that is the integrated win.\n"
         )
-        lines.append("| Engine | native fusion p50 ms | native fusion p95 ms |")
-        lines.append("|---|---|---|")
+        lines.append(f"| Engine | signals fused | native recall@{meta['k']} | p50 ms | p95 ms |")
+        lines.append("|---|---|---|---|---|")
         for r in nat:
             nl = r["native_fusion_latency_ms"]
-            lines.append(f"| **{r['engine']}** | {_fmt(nl.get('p50', 0))} | {_fmt(nl.get('p95', 0))} |")
+            rec = r.get("native_fusion_recall")
+            rec_s = "—" if rec is None else _fmt(rec, 3)
+            lines.append(
+                f"| **{r['engine']}** | {r.get('native_fusion_signals', 2)} | {rec_s} | "
+                f"{_fmt(nl.get('p50', 0))} | {_fmt(nl.get('p95', 0))} |"
+            )
+
+    # --- architecture axes: read-your-writes / consistency ---
+    inc = [r for r in ok if r.get("n_incremental")]
+    if inc:
+        lines.append("\n## Architecture axes — where integration matters\n")
+        lines.append(
+            "Beyond raw recall/latency: an agent writes memories continuously, so the store "
+            "must absorb a new memory and recall it **immediately**, keeping every signal "
+            "consistent in one system. *Read-your-writes* = the fraction of just-upserted "
+            "memories a freshly-issued probe finds, per signal — a signal whose index didn't "
+            "update synchronously can't see the new memory. `n/a` = the engine lacks that "
+            "signal entirely.\n"
+        )
+        lines.append(
+            "| Engine | Transactional | Time-travel | Incremental index | Systems needed | "
+            "upsert p50 ms | RYW vector | RYW full-text | RYW graph | **RYW fused** |"
+        )
+        lines.append("|---|---|---|---|---|---|---|---|---|---|")
+
+        def _pct(x):
+            return "n/a" if x is None else f"{x * 100:.0f}%"
+
+        for r in inc:
+            c = r["capabilities"]
+            up = r["incremental_upsert_ms"].get("p50", 0)
+            lines.append(
+                f"| **{r['engine']}** | {_CHECK[c['transactional']]} | {_CHECK[c['time_travel']]} | "
+                f"{_CHECK[c['incremental_index']]} | {c['engines_needed']} | {_fmt(up)} | "
+                f"{_pct(r['freshness_vector'])} | {_pct(r['freshness_fts'])} | "
+                f"{_pct(r['freshness_graph'])} | **{_pct(r['freshness_fused'])}** |"
+            )
+        lines.append(
+            "\n*A low full-text RYW with high vector RYW means the engine's FTS index is a "
+            "build-time snapshot: new memories are unsearchable by keyword until a rebuild, "
+            "and the missing signal can drag the new memory out of the fused top-k entirely.*\n"
+        )
 
     lines.append(
         "\n---\n*Recall is measured against an exact NumPy ground truth (full-scan cosine + "

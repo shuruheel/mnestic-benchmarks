@@ -32,8 +32,12 @@ class DuckDBAdapter(Adapter):
         fusion_locus="app-side",
         engines_needed=1,
         embedded=True,
+        transactional=True,
+        time_travel=False,
+        incremental_index=False,  # the FTS index is a snapshot — new rows need a rebuild
         notes="VSS HNSW persistence is experimental (hnsw_enable_experimental_persistence); "
-        "FTS via PRAGMA create_fts_index/match_bm25; graph via recursive CTEs; app-side fusion.",
+        "FTS index is a build-time snapshot (PRAGMA create_fts_index) — new rows are not "
+        "searchable until it is rebuilt; graph via recursive CTEs; app-side fusion.",
     )
 
     def setup(self, meta: WorkloadMeta, workdir: Path) -> None:
@@ -119,6 +123,15 @@ class DuckDBAdapter(Adapter):
             return [r[0] for r in rows]
 
         return bfs_chunk_ranking(neighbors, chunks_of, spec.seed_entity, spec.hops, spec.pool_n)
+
+    def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
+        self._con.execute(
+            "INSERT INTO chunks VALUES (?, ?, ?)", (cid, text, [float(x) for x in vector])
+        )
+        if entity_ids:
+            self._con.executemany(
+                "INSERT INTO mentions VALUES (?, ?)", [(cid, e) for e in entity_ids]
+            )
 
     def teardown(self) -> None:
         try:

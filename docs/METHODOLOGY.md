@@ -75,6 +75,29 @@ recall@k · latency p50/p95/p99 · QPS (single-thread; concurrent where the clie
 thread-safe) · index build time · ingest rows/s · peak RSS (build + query) · on-disk size ·
 fusion locus (native vs app-side) · round-trips per fused query · graph-assisted flag.
 
+## Architecture axes (where integration matters)
+
+Raw recall/latency is a drag race specialized single-purpose engines tend to win. But an
+agentic memory is written *continuously*, queried immediately, and must keep all three
+signals consistent. So we also measure the axes a vector-only or multi-system stack
+struggles with:
+
+- **Read-your-writes / freshness.** After the base build, we hold out a set of new memories
+  (each a chunk + embedding linked to an existing entity, with a probe query equal to its
+  own text and embedding, seeded at that entity). For each, the adapter `upsert`s the memory
+  the way an agent would at runtime, then *immediately* issues the probe. We record the
+  fraction found **per signal** (vector / full-text / graph) and in the **fused** top-k. A
+  signal whose index is a build-time snapshot (rather than maintained on write) cannot find
+  the new memory — and the missing signal can drag it out of the fused result entirely.
+- **Incremental upsert latency** — the per-memory write + index-maintenance cost.
+- **Capability flags** — `transactional` (chunk + edges + indexes commit atomically),
+  `time-travel` (query memory as-of a past point), `incremental index`, and
+  `systems needed` (how many separate stores a real deployment of that engine requires for
+  all three signals — 1 for the integrated engines, more for vector-only ones).
+
+These reframe the comparison from "fastest single-signal lookup" to "can this be one
+consistent, live agentic-memory substrate" — the question mnestic is actually built to win.
+
 ## Reproduce it
 
 ```bash

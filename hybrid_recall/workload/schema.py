@@ -77,6 +77,7 @@ class WorkloadMeta:
     n_edges: int
     n_chunks: int
     n_queries: int
+    n_incremental: int = 0   # held-out memories for the read-your-writes / freshness axis
     real_embeddings: bool = False
 
 
@@ -90,6 +91,15 @@ class Workload:
     entity_emb: np.ndarray   # (n_entities, dim) float32, row = Entity.vec_idx
     chunk_emb: np.ndarray    # (n_chunks, dim)   float32, row = Chunk.vec_idx
     query_emb: np.ndarray    # (n_queries, dim)  float32, row = Query.vec_idx
+
+    # Held-out incremental memories for the read-your-writes / freshness axis. Each
+    # inc_query is a probe that should return its inc_chunk once the chunk is upserted
+    # and synchronously indexed. inc_chunks link to existing entities (so the graph
+    # signal applies). Not part of the base corpus or the recall@k ground truth.
+    inc_chunks: list[Chunk] = field(default_factory=list)
+    inc_queries: list[Query] = field(default_factory=list)
+    inc_chunk_emb: np.ndarray = field(default_factory=lambda: np.zeros((0, 0), np.float32))
+    inc_query_emb: np.ndarray = field(default_factory=lambda: np.zeros((0, 0), np.float32))
 
     # Derived lookups (built lazily by ensure_index()).
     _entity_by_id: dict[str, Entity] = field(default_factory=dict, repr=False)
@@ -135,12 +145,17 @@ class Workload:
         _dump_jsonl(d / "edges.jsonl", (asdict(e) for e in self.edges))
         _dump_jsonl(d / "chunks.jsonl", (asdict(c) for c in self.chunks))
         _dump_jsonl(d / "queries.jsonl", (asdict(q) for q in self.queries))
+        if self.inc_chunks:
+            _dump_jsonl(d / "inc_chunks.jsonl", (asdict(c) for c in self.inc_chunks))
+            _dump_jsonl(d / "inc_queries.jsonl", (asdict(q) for q in self.inc_queries))
+            np.save(d / "inc_chunk_emb.npy", self.inc_chunk_emb)
+            np.save(d / "inc_query_emb.npy", self.inc_query_emb)
 
     @classmethod
     def load(cls, path: str | Path) -> "Workload":
         d = Path(path)
         meta = WorkloadMeta(**json.loads((d / "meta.json").read_text()))
-        return cls(
+        wl = cls(
             meta=meta,
             entities=[Entity(**r) for r in _load_jsonl(d / "entities.jsonl")],
             edges=[Edge(**r) for r in _load_jsonl(d / "edges.jsonl")],
@@ -150,6 +165,12 @@ class Workload:
             chunk_emb=np.load(d / "chunk_emb.npy"),
             query_emb=np.load(d / "query_emb.npy"),
         )
+        if (d / "inc_chunks.jsonl").exists():
+            wl.inc_chunks = [Chunk(**r) for r in _load_jsonl(d / "inc_chunks.jsonl")]
+            wl.inc_queries = [Query(**r) for r in _load_jsonl(d / "inc_queries.jsonl")]
+            wl.inc_chunk_emb = np.load(d / "inc_chunk_emb.npy")
+            wl.inc_query_emb = np.load(d / "inc_query_emb.npy")
+        return wl
 
 
 def _dump_jsonl(path: Path, rows) -> None:

@@ -70,6 +70,7 @@ def generate(
     chunk_words: int = 10,
     query_words: int = 4,
     summary_words: int = 6,
+    incremental: int = 0,
 ) -> Workload:
     rng = np.random.default_rng(seed)
     pool_n = pool_n if pool_n is not None else max(100, 10 * k)
@@ -167,11 +168,33 @@ def generate(
             Query(id=f"q{i}", text=text, seed_entity=f"e{int(q_seed_idx[i])}", cluster=c, vec_idx=i)
         )
 
+    # --- held-out incremental memories (read-your-writes / freshness axis) ---
+    # Each is a NEW memory plus a probe query equal to its own text+embedding and seeded
+    # at the entity it links to. After the engine upserts the memory, the probe should
+    # return it on every signal *iff* that index updated synchronously.
+    inc_chunk_list: list[Chunk] = []
+    inc_query_list: list[Query] = []
+    inc_tokens: list[np.ndarray] = []
+    inc_anchor = rng.integers(0, entities, incremental)
+    inc_cluster = ent_cluster[inc_anchor] if incremental else np.zeros(0, np.int64)
+    for i in range(incremental):
+        c = int(inc_cluster[i])
+        text, toks = topic_text(c, chunk_words)
+        inc_tokens.append(toks)
+        anchor = f"e{int(inc_anchor[i])}"
+        inc_chunk_list.append(
+            Chunk(id=f"inc{i}", text=text, entity_ids=[anchor], cluster=c, vec_idx=i)
+        )
+        inc_query_list.append(
+            Query(id=f"iq{i}", text=text, seed_entity=anchor, cluster=c, vec_idx=i)
+        )
+
     # --- embeddings ------------------------------------------------------
     if real_embeddings:
         entity_emb = emb.real_embeddings([e.summary for e in entity_list])
         chunk_emb = emb.real_embeddings([c.text for c in chunk_list])
         query_emb = emb.real_embeddings([q.text for q in query_list])
+        inc_chunk_emb = emb.real_embeddings([c.text for c in inc_chunk_list]) if incremental else np.zeros((0, 0), np.float32)
         dim = chunk_emb.shape[1]
     else:
         entity_emb = emb.text_derived_embeddings(ent_tokens, ent_cluster, word_vectors, centers)
@@ -179,6 +202,13 @@ def generate(
         query_emb = emb.text_derived_embeddings(
             query_tokens, np.asarray(q_cluster), word_vectors, centers
         )
+        inc_chunk_emb = (
+            emb.text_derived_embeddings(inc_tokens, np.asarray(inc_cluster), word_vectors, centers)
+            if incremental
+            else np.zeros((0, dim), np.float32)
+        )
+    # probe query embedding == the memory's own embedding (exact-hit probe)
+    inc_query_emb = inc_chunk_emb.copy()
 
     meta = WorkloadMeta(
         name=name,
@@ -193,6 +223,7 @@ def generate(
         n_edges=edges,
         n_chunks=chunks,
         n_queries=queries,
+        n_incremental=incremental,
         real_embeddings=real_embeddings,
     )
     return Workload(
@@ -204,4 +235,8 @@ def generate(
         entity_emb=entity_emb,
         chunk_emb=chunk_emb,
         query_emb=query_emb,
+        inc_chunks=inc_chunk_list,
+        inc_queries=inc_query_list,
+        inc_chunk_emb=inc_chunk_emb,
+        inc_query_emb=inc_query_emb,
     )

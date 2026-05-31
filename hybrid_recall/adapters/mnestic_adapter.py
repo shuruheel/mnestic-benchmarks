@@ -31,8 +31,11 @@ class MnesticAdapter(Adapter):
         fusion_locus="native",
         engines_needed=1,
         embedded=True,
+        transactional=True,
+        time_travel=True,   # `@` validity / as-of queries
+        incremental_index=True,  # per-row :put maintains HNSW + FTS live
         notes="Single embedded engine for vector + full-text + Datalog graph; "
-        "hybrid_search() fuses vector+FTS in one call.",
+        "hybrid_search() fuses vector+FTS in one call; time-travel via Validity.",
     )
 
     def setup(self, meta: WorkloadMeta, workdir: Path) -> None:
@@ -49,6 +52,11 @@ class MnesticAdapter(Adapter):
         self._run(f":create chunk {{ cid: String => text: String, emb: <F32; {self.dim}> }}")
         self._run(":create edge { src: String, dst: String }")
         self._run(":create mention { cid: String, eid: String }")
+        # Unified traversal relation for the native 3-way hybrid_search graph leg: entity↔entity
+        # edges (both directions) + entity→chunk mentions (one-way, so chunks are leaves). A
+        # chunk's hop from a seed entity is then (entity-hop + 1) — monotonic with the oracle's
+        # entity-hop ordering — so max_hops = graph_hops + 1 reaches all in-range chunks.
+        self._run(":create link { src: String, dst: String }")
 
     def _run(self, q: str, params: dict | None = None, immutable: bool = False):
         return self._db.run_script(q, params or {}, immutable)
@@ -75,6 +83,11 @@ class MnesticAdapter(Adapter):
         mentions = [[c.id, eid] for c in wl.chunks for eid in c.entity_ids]
         self._put_pairs("?[cid,eid] <- $r :put mention {cid,eid}", mentions)
         rows += len(mentions)
+        # link relation for the native graph leg: entity edges both directions + entity->chunk
+        link = [[e.src, e.dst] for e in wl.edges] + [[e.dst, e.src] for e in wl.edges]
+        link += [[eid, cid] for cid, eid in mentions]
+        self._put_pairs("?[src,dst] <- $r :put link {src,dst}", link)
+        rows += len(link)
         return IngestStats(rows=rows, seconds=time.perf_counter() - t0)
 
     def _put_pairs(self, script: str, pairs: list[list[str]]) -> None:
@@ -105,19 +118,15 @@ class MnesticAdapter(Adapter):
         return [row[0] for row in r["rows"]]
 
     def search_fts(self, spec: QuerySpec) -> list[str]:
-        # Proper disjunctive ranked FTS: cozo's `a OR b` query does not sum per-term
-        # relevance (a 2-term match can tie a 1-term match), so we score each query term
-        # against the FTS index and sum per chunk — the idiomatic cozo formulation, in one
-        # run_script call. This matches the oracle's disjunctive BM25 ordering.
-        terms = list(dict.fromkeys(spec.text.split()))
-        # Per-term k a few × pool_n so multi-term docs (whose per-term rank can fall just
-        # outside the top pool_n) survive the sum and reproduce the disjunctive BM25 ranking.
-        k = max(spec.pool_n, 200)
+        # Single multi-term disjunctive BM25 query. mnestic's FTS now sums per-term BM25
+        # contributions for an `a OR b` query (BM25 is the default scorer, fork 0.8.x), so
+        # one call returns the proper full-BM25 top-k — no per-term decomposition or
+        # over-fetch (the earlier workaround was needed only when `OR` took the max score).
+        q = " OR ".join(dict.fromkeys(spec.text.split()))
         r = self._run(
-            "term[t] <- $terms\n"
-            "m[cid, sum(score)] := term[t], ~chunk:fts{cid | query: t, k: $k, bind_score: score}\n"
-            "?[cid, s] := m[cid, s] :order -s :limit $lim",
-            {"terms": [[t] for t in terms], "k": k, "lim": spec.pool_n},
+            "?[cid, score] := ~chunk:fts{cid | query: $q, k: $k, bind_score: score} "
+            ":order -score :limit $k",
+            {"q": q, "k": spec.pool_n},
             True,
         )
         return [row[0] for row in r["rows"]]
@@ -146,6 +155,8 @@ class MnesticAdapter(Adapter):
         return [cid for cid, _ in ranked[: spec.pool_n]]
 
     def native_hybrid(self, spec: QuerySpec) -> list[str] | None:
+        # Native 3-way fusion in ONE call (Bet 1a): vector + FTS + a graph-proximity leg
+        # over the unified `link` relation, all RRF-fused inside the engine.
         res = self._db.hybrid_search(
             {
                 "relation": "chunk",
@@ -155,13 +166,39 @@ class MnesticAdapter(Adapter):
                 "vector_k": spec.pool_n,
                 "ef": max(64, spec.pool_n),
                 "fts_index": "fts",
-                "query_text": spec.text,
+                "query_text": " OR ".join(dict.fromkeys(spec.text.split())),
                 "fts_k": spec.pool_n,
+                "graph_legs": [
+                    {
+                        "label": "graph",
+                        "edge_relation": "link",
+                        "from_col": "src",
+                        "to_col": "dst",
+                        "seeds": [spec.seed_entity],
+                        "max_hops": spec.hops + 1,  # +1 for the entity->chunk leaf hop
+                        "undirected": False,  # edges already stored both ways; chunks stay leaves
+                    }
+                ],
                 "rrf_k": spec.rrf_k,
                 "limit": spec.k,
             }
         )
         return [row[0] for row in res["rows"]][: spec.k]
+
+    def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
+        self._run(
+            "?[cid, text, emb] <- $r :put chunk {cid => text, emb}",
+            {"r": [[cid, text, [float(x) for x in vector]]]},
+        )
+        if entity_ids:
+            self._run(
+                "?[cid, eid] <- $r :put mention {cid, eid}",
+                {"r": [[cid, eid] for eid in entity_ids]},
+            )
+            self._run(
+                "?[src, dst] <- $r :put link {src, dst}",
+                {"r": [[eid, cid] for eid in entity_ids]},
+            )
 
     def teardown(self) -> None:
         try:
