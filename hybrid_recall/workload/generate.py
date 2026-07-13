@@ -38,12 +38,31 @@ _SYLL = [
 ]
 
 
+def _max_syllables(size: int) -> int:
+    """Shortest word length whose pseudo-word space comfortably covers `size`.
+
+    Rejection sampling below can only ever emit distinct words that exist: with `s`
+    syllables there are s**2 + ... + s**n words of length 2..n. At 36 syllables that is
+    47,952 for n=3 — fewer than the 51,200 the `medium` scale asks for, so the loop could
+    never terminate. Grow n until the space carries `size` with 2x headroom (which also
+    keeps the collision tail cheap). n=3 still covers every scale up to ~24k words, so
+    `tiny` and `small` keep drawing exactly as before and their workloads stay
+    bit-identical to the published reference runs.
+    """
+    s = len(_SYLL)
+    n = 3
+    while sum(s**i for i in range(2, n + 1)) < size * 2:
+        n += 1
+    return n
+
+
 def _make_vocab(rng: np.random.Generator, size: int) -> list[str]:
-    """`size` unique pseudo-words built from 2-3 syllables (deterministic)."""
+    """`size` unique pseudo-words built from 2+ syllables (deterministic)."""
+    max_syll = _max_syllables(size)
     words: set[str] = set()
     out: list[str] = []
     while len(out) < size:
-        n_syll = 2 + int(rng.integers(0, 2))
+        n_syll = 2 + int(rng.integers(0, max_syll - 1))
         w = "".join(_SYLL[i] for i in rng.integers(0, len(_SYLL), n_syll))
         if w not in words:
             words.add(w)
