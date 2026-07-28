@@ -58,7 +58,7 @@ Homepage = "https://github.com/shuruheel/mnestic"
 Repository = "https://github.com/shuruheel/mnestic-benchmarks"
 
 [tool.hatch.build.targets.wheel]
-packages = ["hybrid_recall"]
+packages = ["hybrid_recall", "temporal_belief"]
 
 [tool.ruff]
 line-length = 100

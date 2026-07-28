@@ -31,6 +31,18 @@ anything if you can re-run it and check it. So:
   pre-1.0; **Kuzu was archived in October 2025** (last release v0.10.0).
 - **PRs welcome** — if any engine is configured unfairly, open a PR.
 
+## The temporal-belief workload
+
+Beyond retrieval, the suite now carries a second workload: **temporal belief** — ingest
+sources, derive top-k proofs (`min_cost_k`), surface contested readings under
+contradiction (`pareto_min` skyline), retract a source, `:reconcile`, and assert both the
+valid-time and transaction-time answers against a pure-Python oracle. Deterministic,
+replayable, every phase timed. See [`docs/TEMPORAL-BELIEF.md`](docs/TEMPORAL-BELIEF.md).
+
+```bash
+python -m temporal_belief.cli --engine sqlite --subjects 1000
+```
+
 ## Quickstart
 
 ```bash
