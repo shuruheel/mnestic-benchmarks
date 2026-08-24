@@ -14,6 +14,8 @@ venv/
 results/*
 !results/sample/
 !results/.gitkeep
+/run-*.log
+/*.pid
 
 # Generated workloads & engine working dirs
 workloads/
