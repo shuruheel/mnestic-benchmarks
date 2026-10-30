@@ -89,6 +89,15 @@ struggles with:
   fraction found **per signal** (vector / full-text / graph) and in the **fused** top-k. A
   signal whose index is a build-time snapshot (rather than maintained on write) cannot find
   the new memory — and the missing signal can drag it out of the fused result entirely.
+- **Filtered vector search.** Agent memory queries are often type-restricted ("the nearest
+  *decisions*"). Every chunk has a kind derived from its id (`chunk_kind`: one in 50 is
+  `article`, about 2%), so the workload files and base ground truth are unchanged. For the
+  first 200 queries, each engine returns the top-k `article` chunks nearest the query
+  vector, by every strategy it offers (`filter_strategies`): post-filtering a global ANN
+  prefix, a search-time filter at several `ef`, a partial index over the kind, an exact
+  scan, SQL `WHERE`, LanceDB pre/post-filter. Recall is against an exact NumPy top-k over
+  the `article` chunks only. A post-filter fails when the global prefix holds few matches;
+  a search-time filter that prunes the `ef`-wide pool cannot see past `ef`.
 - **Incremental upsert latency** — the per-memory write + index-maintenance cost.
 - **Capability flags** — `transactional` (chunk + edges + indexes commit atomically),
   `time-travel` (query memory as-of a past point), `incremental index`, and

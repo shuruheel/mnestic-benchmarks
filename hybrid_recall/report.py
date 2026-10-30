@@ -134,6 +134,31 @@ def render_markdown(payload: dict) -> str:
             "and the missing signal can drag the new memory out of the fused top-k entirely.*\n"
         )
 
+    # --- filtered vector axis ---
+    filt = [r for r in ok if r.get("filtered")]
+    if filt:
+        lines.append("\n## Filtered vector search — top-k of one rare type\n")
+        rows = filt[0].get("filtered_kind_rows", 0)
+        lines.append(
+            "Agent memory queries are often type-restricted (\"the nearest *decisions*\"). "
+            f"About 2% of chunks (here {rows:,}) carry the rare kind; each query asks for the "
+            f"top-{meta['k']} chunks of that kind nearest its vector, scored against an exact "
+            "NumPy top-k over that kind only. Strategies are the engine's own ways to answer: "
+            "**post-filter** takes a global ANN prefix and drops other kinds (it fails when the "
+            "prefix holds few matches); **search filter** prunes the index's candidate pool, so "
+            "it cannot see past `ef`; **partial index** indexes the kind alone; **exact** "
+            "scans the kind's rows.\n"
+        )
+        lines.append("| Engine | Strategy | recall@k | p50 ms | p95 ms |")
+        lines.append("|---|---|---|---|---|")
+        for r in filt:
+            for strategy, f in r["filtered"].items():
+                lat = f["latency_ms"]
+                lines.append(
+                    f"| **{r['engine']}** | {strategy} | {f['recall']:.3f} | "
+                    f"{_fmt(lat.get('p50', 0))} | {_fmt(lat.get('p95', 0))} |"
+                )
+
     lines.append(
         "\n---\n*Recall is measured against an exact NumPy ground truth (full-scan cosine + "
         "exact BM25 + exact k-hop BFS, fused with the same canonical RRF). Engines missing a "

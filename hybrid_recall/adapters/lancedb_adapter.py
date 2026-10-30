@@ -17,7 +17,7 @@ os.environ.setdefault("LANCE_LOG", "error")  # quiet the Rust-side autoprojectio
 import lancedb  # noqa: E402
 import pyarrow as pa  # noqa: E402
 
-from ..workload.schema import Workload, WorkloadMeta
+from ..workload.schema import Workload, WorkloadMeta, chunk_kind
 from .base import Adapter, BuildStats, Capabilities, IngestStats, QuerySpec, dir_size_bytes
 
 _BATCH = 10000
@@ -53,6 +53,7 @@ class LanceDBAdapter(Adapter):
                 pa.field("cid", pa.string()),
                 pa.field("text", pa.string()),
                 pa.field("vector", pa.list_(pa.float32(), self.dim)),
+                pa.field("kind", pa.string()),
             ]
         )
         self._tbl = self._db.create_table("chunks", schema=self._schema)
@@ -63,7 +64,14 @@ class LanceDBAdapter(Adapter):
         rows = 0
         batch = []
         for c in wl.chunks:
-            batch.append({"cid": c.id, "text": c.text, "vector": [float(x) for x in emb[c.vec_idx]]})
+            batch.append(
+                {
+                    "cid": c.id,
+                    "text": c.text,
+                    "vector": [float(x) for x in emb[c.vec_idx]],
+                    "kind": chunk_kind(c.id),
+                }
+            )
             if len(batch) >= _BATCH:
                 self._tbl.add(batch)
                 rows += len(batch)
@@ -94,6 +102,21 @@ class LanceDBAdapter(Adapter):
         )
         return [r["cid"] for r in rows]
 
+    # Filtered vector axis: LanceDB's where() before the ANN search (prefilter)
+    # or on its results (postfilter).
+    filter_strategies = ("prefilter", "postfilter")
+
+    def search_vector_filtered(self, spec: QuerySpec, kind: str, strategy: str) -> list[str]:
+        rows = (
+            self._tbl.search([float(x) for x in spec.vector], vector_column_name="vector")
+            .metric("cosine")
+            .where(f"kind = '{kind}'", prefilter=strategy == "prefilter")
+            .limit(spec.k)
+            .select(["cid"])
+            .to_list()
+        )
+        return [r["cid"] for r in rows]
+
     def search_fts(self, spec: QuerySpec) -> list[str]:
         rows = (
             self._tbl.search(spec.text, query_type="fts")
@@ -106,7 +129,9 @@ class LanceDBAdapter(Adapter):
     def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
         # entity_ids ignored — LanceDB has no graph. Vector is searchable immediately;
         # the FTS index covers only rows present at build time (freshness will show this).
-        self._tbl.add([{"cid": cid, "text": text, "vector": [float(x) for x in vector]}])
+        self._tbl.add(
+            [{"cid": cid, "text": text, "vector": [float(x) for x in vector], "kind": chunk_kind(cid)}]
+        )
 
     def native_hybrid(self, spec: QuerySpec) -> list[str] | None:
         rows = (

@@ -12,10 +12,12 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+import numpy as np
+
 from .adapters import load_adapter
 from .adapters.base import Adapter, QuerySpec
 from .metrics import PeakRSS, percentiles, recall_at_k, time_call
-from .workload.schema import Workload
+from .workload.schema import FILTER_KIND, Workload, chunk_kind
 
 WARMUP = 50            # warm disk-resident caches (e.g. mnestic's HNSW) before timing
 DEFAULT_CONCURRENCY = 8
@@ -60,6 +62,10 @@ class EngineResult:
     freshness_fts: float | None = None       # ... via full-text
     freshness_graph: float | None = None     # ... via graph
     freshness_fused: float | None = None     # ... in the fused top-k
+    # filtered vector axis: top-k of one rare chunk kind, per strategy
+    filtered_kind_rows: int = 0
+    filtered_prepare_seconds: float = 0.0
+    filtered: dict = field(default_factory=dict)  # strategy -> {recall, latency_ms}
 
 
 def _specs(wl: Workload) -> list[QuerySpec]:
@@ -122,6 +128,48 @@ def _incremental_phase(adapter: Adapter, wl: Workload, m, res: "EngineResult") -
     res.freshness_fts = hits["fts"] / n if caps.fts else None
     res.freshness_graph = hits["graph"] / n if caps.graph else None
     res.freshness_fused = hits["fused"] / n
+
+
+FILTER_QUERIES = 200
+
+
+def filtered_ground_truth(wl: Workload, specs: list[QuerySpec], kind: str, k: int) -> list[list[str]]:
+    """Exact cosine top-k among chunks of `kind`, per query (NumPy oracle)."""
+    rows = [c for c in wl.chunks if chunk_kind(c.id) == kind]
+    if not rows:
+        return [[] for _ in specs]
+    mat = wl.chunk_emb[[c.vec_idx for c in rows]].astype(np.float64)
+    mat /= np.linalg.norm(mat, axis=1, keepdims=True) + 1e-12
+    out = []
+    for s in specs:
+        q = np.asarray(s.vector, dtype=np.float64)
+        q /= np.linalg.norm(q) + 1e-12
+        order = np.argsort(-(mat @ q), kind="stable")[:k]
+        out.append([rows[i].id for i in order])
+    return out
+
+
+def _filtered_phase(adapter: Adapter, wl: Workload, specs: list[QuerySpec], res: "EngineResult") -> None:
+    strategies = adapter.filter_strategies
+    if not strategies:
+        return
+    k = wl.meta.k
+    sample = specs[:FILTER_QUERIES]
+    truth = filtered_ground_truth(wl, sample, FILTER_KIND, k)
+    res.filtered_kind_rows = sum(1 for c in wl.chunks if chunk_kind(c.id) == FILTER_KIND)
+    _, res.filtered_prepare_seconds = time_call(adapter.prepare_filtered, FILTER_KIND)
+    for strategy in strategies:
+        for s in sample[:WARMUP]:
+            adapter.search_vector_filtered(s, FILTER_KIND, strategy)
+        latencies, recalls = [], []
+        for s, gt in zip(sample, truth):
+            out, dt = time_call(adapter.search_vector_filtered, s, FILTER_KIND, strategy)
+            latencies.append(dt * 1000.0)
+            recalls.append(recall_at_k(out[:k], gt, k))
+        res.filtered[strategy] = {
+            "recall": statistics.mean(recalls) if recalls else 0.0,
+            "latency_ms": percentiles(latencies),
+        }
 
 
 def run_engine(
@@ -223,6 +271,9 @@ def run_engine(
         # architecture axis: read-your-writes / freshness. Upsert each held-out memory the
         # way an agent writes one at runtime, then immediately probe — per signal. A signal
         # whose index didn't update synchronously can't find the brand-new memory.
+        # filtered vector axis runs before the incremental writes so they cannot
+        # change its corpus.
+        _filtered_phase(adapter, wl, specs, res)
         _incremental_phase(adapter, wl, m, res)
 
         res.ok = True

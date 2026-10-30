@@ -120,6 +120,19 @@ class Adapter(abc.ABC):
         """Optional single-call vector+FTS fusion. Return None if unsupported."""
         return None
 
+    # --- filtered vector axis (optional) ----------------------------------
+    # Strategies this engine offers for "top-k nearest chunks of one kind"
+    # (chunk_kind). Each is measured separately, so a post-filter, a search-time
+    # filter, a partial index and an exact scan are compared on one workload.
+    filter_strategies: tuple[str, ...] = ()
+
+    def prepare_filtered(self, kind: str) -> None:  # noqa: B027  (optional)
+        """One-off setup for the filtered axis (e.g. a partial index), timed
+        separately from the base build."""
+
+    def search_vector_filtered(self, spec: QuerySpec, kind: str, strategy: str) -> list[str]:
+        raise NotImplementedError
+
     # --- fused query (shared; do not override) --------------------------
     def query(self, spec: QuerySpec) -> QueryResult:
         rankings: list[list[str]] = []
