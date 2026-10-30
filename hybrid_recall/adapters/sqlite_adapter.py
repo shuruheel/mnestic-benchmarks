@@ -16,7 +16,7 @@ import apsw
 import sqlite_vec
 
 from ..graphwalk import bfs_chunk_ranking
-from ..workload.schema import Workload, WorkloadMeta
+from ..workload.schema import Workload, WorkloadMeta, chunk_kind
 from .base import Adapter, BuildStats, Capabilities, IngestStats, QuerySpec, dir_size_bytes
 
 _BATCH = 5000
@@ -55,7 +55,7 @@ class SQLiteAdapter(Adapter):
         con.loadextension(sqlite_vec.loadable_path())
         con.enableloadextension(False)
         con.execute(f"CREATE VIRTUAL TABLE vchunks USING vec0(embedding float[{self.dim}])")
-        con.execute("CREATE TABLE chunks (rid INTEGER PRIMARY KEY, cid TEXT, text TEXT)")
+        con.execute("CREATE TABLE chunks (rid INTEGER PRIMARY KEY, cid TEXT, text TEXT, kind TEXT)")
         con.execute("CREATE VIRTUAL TABLE fchunks USING fts5(text, content='')")
         con.execute("CREATE TABLE edges (src TEXT, dst TEXT)")
         con.execute("CREATE TABLE mentions (cid TEXT, eid TEXT)")
@@ -72,7 +72,7 @@ class SQLiteAdapter(Adapter):
             for c in wl.chunks:
                 rid = c.vec_idx
                 vbatch.append((rid, sqlite_vec.serialize_float32([float(x) for x in emb[c.vec_idx]])))
-                cbatch.append((rid, c.id, c.text))
+                cbatch.append((rid, c.id, c.text, chunk_kind(c.id)))
                 fbatch.append((rid, c.text))
                 if len(vbatch) >= _BATCH:
                     self._flush(cur, vbatch, cbatch, fbatch)
@@ -94,7 +94,7 @@ class SQLiteAdapter(Adapter):
     @staticmethod
     def _flush(cur, vbatch, cbatch, fbatch) -> None:
         cur.executemany("INSERT INTO vchunks (rowid, embedding) VALUES (?, ?)", vbatch)
-        cur.executemany("INSERT INTO chunks (rid, cid, text) VALUES (?, ?, ?)", cbatch)
+        cur.executemany("INSERT INTO chunks (rid, cid, text, kind) VALUES (?, ?, ?, ?)", cbatch)
         cur.executemany("INSERT INTO fchunks (rowid, text) VALUES (?, ?)", fbatch)
 
     def build_indexes(self) -> BuildStats:
@@ -113,6 +113,22 @@ class SQLiteAdapter(Adapter):
             "SELECT c.cid FROM vchunks v JOIN chunks c ON c.rid = v.rowid "
             "WHERE v.embedding MATCH ? AND k = ? ORDER BY v.distance",
             (q, spec.pool_n),
+        )
+        return [r[0] for r in rows]
+
+    # Filtered vector axis: vec0 has no ANN index (brute force), so the exact
+    # answer is a b-tree lookup on kind plus a cosine distance per matching row.
+    filter_strategies = ("exact_where",)
+
+    def prepare_filtered(self, kind: str) -> None:
+        self._con.execute("CREATE INDEX IF NOT EXISTS idx_chunks_kind ON chunks (kind)")
+
+    def search_vector_filtered(self, spec: QuerySpec, kind: str, strategy: str) -> list[str]:
+        q = sqlite_vec.serialize_float32([float(x) for x in spec.vector])
+        rows = self._con.execute(
+            "SELECT c.cid FROM chunks c JOIN vchunks v ON v.rowid = c.rid WHERE c.kind = ? "
+            "ORDER BY vec_distance_cosine(v.embedding, ?) LIMIT ?",
+            (kind, q, spec.k),
         )
         return [r[0] for r in rows]
 
@@ -153,7 +169,10 @@ class SQLiteAdapter(Adapter):
                 "INSERT INTO vchunks (rowid, embedding) VALUES (?, ?)",
                 (rid, sqlite_vec.serialize_float32([float(x) for x in vector])),
             )
-            con.execute("INSERT INTO chunks (rid, cid, text) VALUES (?, ?, ?)", (rid, cid, text))
+            con.execute(
+                "INSERT INTO chunks (rid, cid, text, kind) VALUES (?, ?, ?, ?)",
+                (rid, cid, text, chunk_kind(cid)),
+            )
             con.execute("INSERT INTO fchunks (rowid, text) VALUES (?, ?)", (rid, text))
             con.executemany(
                 "INSERT INTO mentions (cid, eid) VALUES (?, ?)", [(cid, e) for e in entity_ids]

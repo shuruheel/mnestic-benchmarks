@@ -19,6 +19,7 @@ large scales memory- and IO-efficient (vectors as .npy, everything else as jsonl
 from __future__ import annotations
 
 import json
+import zlib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -26,6 +27,18 @@ import numpy as np
 
 ENTITY_TYPES = ("Person", "Concept", "Event", "Org")
 EDGE_TYPES = ("relates_to", "part_of", "caused_by", "mentions", "succeeds")
+
+
+# Filtered-vector axis (E1): every chunk has a type derived from its id, so the
+# workload files and the base ground truth are unchanged. One chunk in
+# FILTER_EVERY is FILTER_KIND (~2%): the rare-type case where a type-restricted
+# vector search over a global ANN prefix finds few or no matches.
+FILTER_KIND = "article"
+FILTER_EVERY = 50
+
+
+def chunk_kind(cid: str) -> str:
+    return FILTER_KIND if zlib.crc32(cid.encode()) % FILTER_EVERY == 0 else "note"
 
 
 @dataclass(slots=True)

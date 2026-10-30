@@ -15,7 +15,7 @@ from pathlib import Path
 import duckdb
 
 from ..graphwalk import bfs_chunk_ranking
-from ..workload.schema import Workload, WorkloadMeta
+from ..workload.schema import Workload, WorkloadMeta, chunk_kind
 from .base import Adapter, BuildStats, Capabilities, IngestStats, QuerySpec, dir_size_bytes
 
 _BATCH = 5000
@@ -49,7 +49,7 @@ class DuckDBAdapter(Adapter):
         con.execute("INSTALL vss; LOAD vss;")
         con.execute("INSTALL fts; LOAD fts;")
         con.execute("SET hnsw_enable_experimental_persistence = true;")
-        con.execute(f"CREATE TABLE chunks (cid VARCHAR, text VARCHAR, emb FLOAT[{self.dim}])")
+        con.execute(f"CREATE TABLE chunks (cid VARCHAR, text VARCHAR, emb FLOAT[{self.dim}], kind VARCHAR)")
         con.execute("CREATE TABLE edges (src VARCHAR, dst VARCHAR)")
         con.execute("CREATE TABLE mentions (cid VARCHAR, eid VARCHAR)")
         self._con = con
@@ -61,13 +61,13 @@ class DuckDBAdapter(Adapter):
         rows = 0
         batch = []
         for c in wl.chunks:
-            batch.append((c.id, c.text, [float(x) for x in emb[c.vec_idx]]))
+            batch.append((c.id, c.text, [float(x) for x in emb[c.vec_idx]], chunk_kind(c.id)))
             if len(batch) >= _BATCH:
-                con.executemany("INSERT INTO chunks VALUES (?, ?, ?)", batch)
+                con.executemany("INSERT INTO chunks VALUES (?, ?, ?, ?)", batch)
                 rows += len(batch)
                 batch = []
         if batch:
-            con.executemany("INSERT INTO chunks VALUES (?, ?, ?)", batch)
+            con.executemany("INSERT INTO chunks VALUES (?, ?, ?, ?)", batch)
             rows += len(batch)
         con.executemany("INSERT INTO edges VALUES (?, ?)", [(e.src, e.dst) for e in wl.edges])
         rows += len(wl.edges)
@@ -91,6 +91,18 @@ class DuckDBAdapter(Adapter):
         rows = self._con.execute(
             f"SELECT cid FROM chunks ORDER BY array_cosine_distance(emb, ?::FLOAT[{self.dim}]) LIMIT ?",
             (v, spec.pool_n),
+        ).fetchall()
+        return [r[0] for r in rows]
+
+    # Filtered vector axis: SQL WHERE on the kind column with the same ORDER BY.
+    filter_strategies = ("where",)
+
+    def search_vector_filtered(self, spec: QuerySpec, kind: str, strategy: str) -> list[str]:
+        v = [float(x) for x in spec.vector]
+        rows = self._con.execute(
+            "SELECT cid FROM chunks WHERE kind = ? "
+            f"ORDER BY array_cosine_distance(emb, ?::FLOAT[{self.dim}]) LIMIT ?",
+            (kind, v, spec.k),
         ).fetchall()
         return [r[0] for r in rows]
 
@@ -126,7 +138,8 @@ class DuckDBAdapter(Adapter):
 
     def upsert_memory(self, cid: str, text: str, vector, entity_ids: list[str]) -> None:
         self._con.execute(
-            "INSERT INTO chunks VALUES (?, ?, ?)", (cid, text, [float(x) for x in vector])
+            "INSERT INTO chunks VALUES (?, ?, ?, ?)",
+            (cid, text, [float(x) for x in vector], chunk_kind(cid)),
         )
         if entity_ids:
             self._con.executemany(

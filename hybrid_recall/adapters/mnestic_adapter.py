@@ -15,7 +15,7 @@ import os
 import time
 from pathlib import Path
 
-from ..workload.schema import Workload, WorkloadMeta
+from ..workload.schema import Workload, WorkloadMeta, chunk_kind
 from .base import Adapter, BuildStats, Capabilities, IngestStats, QuerySpec, dir_size_bytes
 
 _BATCH = 2000
@@ -61,7 +61,10 @@ class MnesticAdapter(Adapter):
         except Exception:  # noqa: BLE001
             base = ""
         self.version = f"{base}({backend})" if base else f"({backend})"
-        self._run(f":create chunk {{ cid: String => text: String, emb: <F32; {self.dim}> }}")
+        self._run(
+            f":create chunk {{ cid: String => text: String, emb: <F32; {self.dim}>, "
+            f"kind: String default 'note' }}"
+        )
         self._run(":create edge { src: String, dst: String }")
         self._run(":create mention { cid: String, eid: String }")
         # Unified traversal relation for the native 3-way hybrid_search graph leg: entity↔entity
@@ -79,14 +82,15 @@ class MnesticAdapter(Adapter):
         # chunks
         emb = wl.chunk_emb
         batch = []
+        put = "?[cid,text,emb,kind] <- $r :put chunk {cid=>text,emb,kind}"
         for c in wl.chunks:
-            batch.append([c.id, c.text, [float(x) for x in emb[c.vec_idx]]])
+            batch.append([c.id, c.text, [float(x) for x in emb[c.vec_idx]], chunk_kind(c.id)])
             if len(batch) >= _BATCH:
-                self._run("?[cid,text,emb] <- $r :put chunk {cid=>text,emb}", {"r": batch})
+                self._run(put, {"r": batch})
                 rows += len(batch)
                 batch = []
         if batch:
-            self._run("?[cid,text,emb] <- $r :put chunk {cid=>text,emb}", {"r": batch})
+            self._run(put, {"r": batch})
             rows += len(batch)
         # edges
         self._put_pairs("?[src,dst] <- $r :put edge {src,dst}", [[e.src, e.dst] for e in wl.edges])
@@ -128,6 +132,54 @@ class MnesticAdapter(Adapter):
             True,
         )
         return [row[0] for row in r["rows"]]
+
+    # Filtered vector axis. post_filter is the consumer pattern this axis was
+    # built to test (a global ANN prefix, then the type check); search_filter_ef*
+    # prunes the ef-wide candidate pool inside the index search, so it cannot see
+    # past ef; partial_index is an HNSW index over that kind only; exact_scan is
+    # a full cosine scan of the kind's rows.
+    filter_strategies = (
+        "post_filter",
+        "search_filter_ef100",
+        "search_filter_ef400",
+        "search_filter_ef1600",
+        "partial_index",
+        "exact_scan",
+    )
+
+    def prepare_filtered(self, kind: str) -> None:
+        self._run(
+            f"::hnsw create chunk:vec_{kind} {{ dim: {self.dim}, m: 16, dtype: F32, "
+            f"fields: [emb], distance: Cosine, ef_construction: 64, filter: kind == '{kind}' }}"
+        )
+
+    def search_vector_filtered(self, spec: QuerySpec, kind: str, strategy: str) -> list[str]:
+        params = {"qv": [float(x) for x in spec.vector], "kind": kind, "k": spec.k}
+        if strategy == "post_filter":
+            params.update(pool=spec.pool_n, ef=max(64, spec.pool_n))
+            script = (
+                "?[cid, dist] := ~chunk:vec{cid, kind | query: q, k: $pool, ef: $ef, "
+                "bind_distance: dist}, kind == $kind, q = vec($qv) :order dist :limit $k"
+            )
+        elif strategy.startswith("search_filter_ef"):
+            params["ef"] = int(strategy.removeprefix("search_filter_ef"))
+            script = (
+                "?[cid, dist] := ~chunk:vec{cid, kind | query: q, k: $k, ef: $ef, "
+                "filter: kind == $kind, bind_distance: dist}, q = vec($qv) :order dist :limit $k"
+            )
+        elif strategy == "partial_index":
+            script = (
+                f"?[cid, dist] := ~chunk:vec_{kind}{{cid | query: q, k: $k, ef: 64, "
+                "bind_distance: dist}, q = vec($qv) :order dist :limit $k"
+            )
+        elif strategy == "exact_scan":
+            script = (
+                "?[cid, dist] := *chunk{cid, kind, emb}, kind == $kind, "
+                "dist = cos_dist(emb, vec($qv)) :order dist :limit $k"
+            )
+        else:
+            raise ValueError(strategy)
+        return [row[0] for row in self._run(script, params, True)["rows"]]
 
     def search_fts(self, spec: QuerySpec) -> list[str]:
         # Single multi-term disjunctive BM25 query. mnestic's FTS now sums per-term BM25
