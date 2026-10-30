@@ -1,0 +1,67 @@
+name: reference-run
+
+# Publishable numbers come from here, not from a maintainer's laptop: a
+# 2026-10-30 rerun on a busy 8 GB laptop moved every engine by up to ±40%
+# between identical runs. This runs one pinned mnestic release with the other
+# embedded engines on a GitHub-hosted runner, back to back in one job, and
+# uploads the results and the rendered report. Nothing is committed: a
+# maintainer reviews the artifact and commits results/ + docs/RESULTS.md.
+# Hosted runners are shared VMs too, so the report records the runner image
+# and CPU; compare engines within one run, not across runs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mnestic_version:
+        description: "mnestic release from PyPI"
+        default: "0.18.0"
+      scale:
+        description: "workload scale (configs/scales.yaml)"
+        default: "small"
+      engines:
+        description: "comma list"
+        default: "mnestic,sqlite,duckdb,lancedb"
+      backend:
+        description: "mnestic storage backend (sqlite | rocksdb)"
+        default: "sqlite"
+
+jobs:
+  reference:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install engines
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[sqlite,duckdb,lancedb,plots,dev]"
+          pip install "mnestic==${{ inputs.mnestic_version }}"
+
+      - name: Record the machine
+        run: |
+          lscpu | grep -E "Model name|^CPU\(s\)" | tee runner.txt
+          free -g | tee -a runner.txt
+          pip list 2>/dev/null | grep -iE "^(mnestic|duckdb|lancedb|sqlite-vec) " | tee -a runner.txt
+
+      - name: Generate workload
+        run: hybrid-recall gen --scale "${{ inputs.scale }}"
+
+      - name: Run
+        env:
+          MNESTIC_BACKEND: ${{ inputs.backend }}
+        run: hybrid-recall run --scale "${{ inputs.scale }}" --engines "${{ inputs.engines }}" --report --plots
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-${{ inputs.scale }}-mnestic-${{ inputs.mnestic_version }}-${{ inputs.backend }}
+          path: |
+            runner.txt
+            results/*.json
+            docs/RESULTS.md
+            docs/assets/*.png

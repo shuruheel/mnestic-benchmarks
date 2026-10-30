@@ -114,6 +114,13 @@ Scales (`configs/scales.yaml`): `tiny` (CI smoke), `small` (reference), `medium`
 Numbers are **hardware-specific**; the reference run's environment is recorded in
 `RESULTS.md`. Re-run on your own hardware to compare.
 
+**Published numbers come from the `reference-run` workflow** (Actions → reference-run →
+Run workflow), not from a developer machine. It installs a pinned mnestic release from
+PyPI next to the other embedded engines on a GitHub-hosted `ubuntu-24.04` runner, runs them
+back to back in one job, and uploads the results, the rendered `RESULTS.md` and a
+`runner.txt` with the CPU and package versions. A maintainer commits the artifact. Hosted
+runners are shared VMs, so compare engines within one run rather than across runs.
+
 ### RocksDB backend + real embeddings (latency validation)
 
 The reference run above uses the default SQLite-backed mnestic wheel and text-derived
