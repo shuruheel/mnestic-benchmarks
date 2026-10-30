@@ -63,3 +63,9 @@ packages = ["hybrid_recall", "temporal_belief"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+
+[tool.ruff.lint]
+# Pinned to ruff's long-standing default set: ruff 0.17 widened its defaults
+# (S110, RUF100, UP037, B027, ...) and CI's unpinned install began failing
+# on code that had not changed.
+select = ["E4", "E7", "E9", "F"]
