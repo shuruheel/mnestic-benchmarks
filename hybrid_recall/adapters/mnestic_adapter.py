@@ -119,6 +119,12 @@ class MnesticAdapter(Adapter):
         # Lowercase only (no stemming/stopwords): the corpus is a synthetic vocabulary, so
         # we keep tokenization aligned with the oracle's plain whitespace tokenization.
         self._run("::fts create chunk:fts { extractor: text, tokenizer: Simple, filters: [Lowercase] }")
+        # Reverse-lookup indexes, the counterparts of the sqlite/duckdb adapters' b-tree
+        # indexes on edges(dst) and mentions(eid). Without them the undirected graph leg's
+        # reverse hop and the entity->chunk join scan the whole relation per lookup
+        # (229 ms -> 4 ms p50 per graph leg at small scale, identical results).
+        self._run("::index create edge:by_dst {dst, src}")
+        self._run("::index create mention:by_eid {eid, cid}")
         secs = time.perf_counter() - t0
         return BuildStats(seconds=secs, disk_bytes=dir_size_bytes(self._dir))
 

@@ -50,6 +50,8 @@ class EngineResult:
     concurrency: int = 0
     query_peak_rss_mb: float = 0.0
     avg_round_trips: float = 0.0
+    # where the fused query's time goes: p50/p95 per signal and for fusion
+    leg_latency_ms: dict = field(default_factory=dict)
     n_queries: int = 0
     # native single-call fusion highlight, if the engine offers one
     native_fusion_latency_ms: dict = field(default_factory=dict)
@@ -229,17 +231,21 @@ def run_engine(
         latencies: list[float] = []
         recalls: list[float] = []
         round_trips: list[int] = []
+        legs: dict[str, list[float]] = {}
         with PeakRSS() as rss:
             for qid, s in zip(qids, specs):
                 out, dt = time_call(adapter.query, s)
                 latencies.append(dt * 1000.0)
                 round_trips.append(out.round_trips)
+                for leg, ms in out.leg_ms.items():
+                    legs.setdefault(leg, []).append(ms)
                 recalls.append(recall_at_k(out.ids, ground_truth[qid], m.k))
         res.query_peak_rss_mb = rss.peak_mb
         res.recall_at_k = statistics.mean(recalls) if recalls else 0.0
         res.latency_ms = percentiles(latencies)
         res.mean_latency_ms = statistics.mean(latencies) if latencies else 0.0
         res.avg_round_trips = statistics.mean(round_trips) if round_trips else 0.0
+        res.leg_latency_ms = {leg: percentiles(v) for leg, v in legs.items()}
         res.qps_serial = (len(latencies) / (sum(latencies) / 1000.0)) if latencies else 0.0
 
         # concurrent throughput on a sample (only where the adapter declares thread-safety)

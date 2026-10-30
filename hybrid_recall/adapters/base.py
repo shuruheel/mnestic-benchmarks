@@ -21,6 +21,7 @@ the scored recall comparison, to keep that comparison fair.
 from __future__ import annotations
 
 import abc
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -77,6 +78,8 @@ class QueryResult:
     ids: list[str]
     round_trips: int = 0
     components: dict[str, list[str]] = field(default_factory=dict)
+    # wall time per signal and for the app-side fusion, in ms
+    leg_ms: dict[str, float] = field(default_factory=dict)
 
 
 class Adapter(abc.ABC):
@@ -138,23 +141,26 @@ class Adapter(abc.ABC):
         rankings: list[list[str]] = []
         components: dict[str, list[str]] = {}
         round_trips = 0
-        if self.capabilities.vector:
-            v = self.search_vector(spec)
-            components["vector"] = v
-            rankings.append(v)
+        leg_ms: dict[str, float] = {}
+        for signal, enabled, search in (
+            ("vector", self.capabilities.vector, self.search_vector),
+            ("fts", self.capabilities.fts, self.search_fts),
+            ("graph", self.capabilities.graph, self.search_graph),
+        ):
+            if not enabled:
+                continue
+            t0 = time.perf_counter()
+            ranking = search(spec)
+            leg_ms[signal] = (time.perf_counter() - t0) * 1000.0
+            components[signal] = ranking
+            rankings.append(ranking)
             round_trips += 1
-        if self.capabilities.fts:
-            f = self.search_fts(spec)
-            components["fts"] = f
-            rankings.append(f)
-            round_trips += 1
-        if self.capabilities.graph:
-            g = self.search_graph(spec)
-            components["graph"] = g
-            rankings.append(g)
-            round_trips += 1
+        t0 = time.perf_counter()
         fused = rrf_fuse(rankings, k=spec.k, rrf_k=spec.rrf_k)
-        return QueryResult(ids=fused, round_trips=round_trips, components=components)
+        leg_ms["fusion"] = (time.perf_counter() - t0) * 1000.0
+        return QueryResult(
+            ids=fused, round_trips=round_trips, components=components, leg_ms=leg_ms
+        )
 
 
 def dir_size_bytes(path: Path) -> int:

@@ -134,6 +134,29 @@ def render_markdown(payload: dict) -> str:
             "and the missing signal can drag the new memory out of the fused top-k entirely.*\n"
         )
 
+    # --- per-signal breakdown of the fused query ---
+    legged = [r for r in ok if r.get("leg_latency_ms")]
+    if legged:
+        lines.append("\n## Where the fused query's time goes (p50 ms)\n")
+        lines.append(
+            "Each fused query issues one retrieval per signal the engine supports, then the "
+            "harness fuses them with the same RRF. Vector is approximate (HNSW) on mnestic, "
+            "DuckDB and LanceDB and an exact brute-force scan on sqlite-vec, which is cheap at "
+            "this corpus size and grows linearly with it.\n"
+        )
+        lines.append("| Engine | vector | full-text | graph | fusion | total p50 |")
+        lines.append("|---|---|---|---|---|---|")
+        for r in legged:
+            legs = r["leg_latency_ms"]
+
+            def _p50(leg):
+                return _fmt(legs[leg]["p50"]) if leg in legs else "n/a"
+
+            lines.append(
+                f"| **{r['engine']}** | {_p50('vector')} | {_p50('fts')} | {_p50('graph')} | "
+                f"{_p50('fusion')} | {_fmt(r['latency_ms'].get('p50', 0))} |"
+            )
+
     # --- filtered vector axis ---
     filt = [r for r in ok if r.get("filtered")]
     if filt:
