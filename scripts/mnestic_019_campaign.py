@@ -226,10 +226,10 @@ def main():
          power=subprocess.check_output(["pmset","-g"],text=True),
          cpu=subprocess.check_output(["sysctl","-n","machdep.cpu.brand_string"],text=True).strip(),
          ram=subprocess.check_output(["sysctl","-n","hw.memsize"],text=True).strip(),
-         concurrency=1, phases=args.phases, warmup=100, e2_queries=20, e3_pairs=100,
+         concurrency=1, phases=args.phases, warmup=100, e2_queries=20 if args.scale=="small" else 2, e3_pairs=100 if args.scale=="small" else 2,
          limits={"e1_call_timeout":"not set", "e2_sweep_call_seconds":5,
                  "widening_attempts":5,"widening_total_ms":250,"estimated_statement_mib":64,
-                 "widening_enforcement":"unsupported in this binding", "process_cap":"external 7200-second supervisor"},
+                 "widening_enforcement":"unsupported in this binding", "process_cap":"7200-second supervisor when used; direct invocations uncapped"},
          phase_instrumentation="unavailable; literal delta is not parse time", hnsw_rng="not seedable")
     cfg=yaml.safe_load(Path("configs/scales.yaml").read_text())[args.scale]
     start=time.perf_counter(); wl=generate(args.scale,seed=args.seed,**cfg)

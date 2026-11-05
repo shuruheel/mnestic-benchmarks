@@ -9,6 +9,7 @@ import numpy as np
 def stats(rows):
     completed=[x for x in rows if not x.get('error')]
     lat=[x['ms'] for x in completed]
+    call_seconds=sum(x['ms'] for x in rows)/1000
     recalls=[x['recall'] for x in rows if x.get('recall') is not None]
     return dict(n=len(rows),errors=sum(bool(x.get('error')) for x in rows),
                 recall=float(np.mean(recalls)) if recalls else None,
@@ -16,7 +17,8 @@ def stats(rows):
                 duplicates=sum(x.get('duplicates',0) for x in rows),
                 ineligible=sum(len(x.get('ineligible',[])) for x in rows),
                 latency_ms={f'p{q}':float(np.percentile(lat,q)) for q in (50,95,99)} if lat else {},
-                completed_qps=len(lat)/(sum(lat)/1000) if lat and sum(lat) else None)
+                attempt_qps=len(rows)/call_seconds if call_seconds else None,
+                successful_qps=len(completed)/call_seconds if call_seconds else None)
 
 
 def bootstrap(builds,key):
