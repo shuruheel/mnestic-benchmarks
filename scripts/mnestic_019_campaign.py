@@ -203,10 +203,12 @@ def main():
     p.add_argument("--artifact", type=Path, required=True)
     p.add_argument("--seed", type=int, default=1234)
     p.add_argument("--scale", choices=["tiny","small"], default="small")
-    p.add_argument("--phases", default="E1,E2,E3")
+    p.add_argument("--phases", default="E1,E2,E3,E2_1536")
     p.add_argument("--output", type=Path, required=True)
     p.add_argument("--database", type=Path, required=True)
     args=p.parse_args()
+    phases=set(args.phases.split(","))
+    if not phases <= {"E1","E2","E3","E2_1536"}:raise ValueError("unknown phase")
     if args.output.exists() or args.database.exists(): raise ValueError("fresh output and database paths required")
     args.output.parent.mkdir(parents=True,exist_ok=True); args.database.mkdir(parents=True)
     fh=args.output.open("x")
@@ -242,7 +244,7 @@ def main():
         print(args.build,args.backend,args.seed,"ingest",flush=True)
         ing=a.ingest(wl); build=a.build_indexes()
         emit(phase="build", ingest=asdict(ing), build=asdict(build))
-        if "E1" in args.phases:
+        if "E1" in phases:
             print("E1 oracle",flush=True); truth=compute_ground_truth(wl)
             emit(phase="oracle", sha256=digest(truth))
             for name, fn in [("decomposed",lambda s:a.query(s).ids),("native",a.native_hybrid)]:
@@ -250,12 +252,29 @@ def main():
                 for s in specs[:100]: fn(s)
                 for i,s in enumerate(specs):
                     emit(phase="E1",path=name,query=i,**observe(lambda:fn(s),truth[wl.queries[i].id]))
-        if "E2" in args.phases:
+        if "E2" in phases:
             print("E2",flush=True); filtered(a,wl,specs,emit,20 if args.scale=="small" else 2)
-        if "E1" in args.phases:
+        if "E1" in phases:
             print("freshness",flush=True); freshness(a,wl,emit)
-        if "E3" in args.phases:
+        if "E3" in phases:
             print("E3",flush=True); literal_cost(a,args.seed,emit,100 if args.scale=="small" else 2)
+        if "E2_1536" in phases:
+            print("E2 dimension 1536 sensitivity",flush=True)
+            a.teardown()
+            cfg1536=dict(cfg,dim=1536)
+            sensitivity=generate(args.scale+"-1536",seed=args.seed,**cfg1536)
+            emit(phase="dataset1536",meta=asdict(sensitivity.meta),
+                 chunk_hash=hashlib.sha256(sensitivity.chunk_emb.tobytes()).hexdigest(),
+                 query_hash=hashlib.sha256(sensitivity.query_emb.tobytes()).hexdigest(),
+                 rows_hash=digest([asdict(c) for c in sensitivity.chunks]))
+            directory=args.database/'dim1536';directory.mkdir()
+            a=MnesticAdapter();a.setup(sensitivity.meta,directory)
+            ing=a.ingest(sensitivity);build=a.build_indexes()
+            emit(phase="build1536",ingest=asdict(ing),build=asdict(build))
+            def emit1536(**record):
+                record['phase']='E2_1536'
+                emit(**record)
+            filtered(a,sensitivity,_specs(sensitivity),emit1536,20 if args.scale=="small" else 2)
         emit(phase="complete", peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
              disk_bytes=dir_size_bytes(args.database), elapsed_seconds=time.perf_counter()-start)
     finally:
