@@ -7,6 +7,27 @@ import shutil
 import subprocess
 import time
 
+
+def competing_builds():
+    rows = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True).splitlines()
+    names = {'cargo', 'rustc', 'clang', 'clang++', 'cc1', 'cc1plus', 'ld', 'ld64.lld', 'rust-lld'}
+    return [row.strip() for row in rows if Path(row.strip().split(None, 1)[-1]).name in names]
+
+
+def quiet_window():
+    deadline = time.monotonic() + 600
+    quiet_since = None
+    while time.monotonic() < deadline:
+        active = competing_builds()
+        if active:
+            quiet_since = None
+        elif quiet_since is None:
+            quiet_since = time.monotonic()
+        elif time.monotonic() - quiet_since >= 60:
+            return
+        time.sleep(5)
+    raise RuntimeError('No 60-second compiler-free window within 10 minutes; timing deferred')
+
 p=argparse.ArgumentParser()
 p.add_argument('--root',type=Path,required=True)
 p.add_argument('--candidate-sha',required=True)
@@ -35,16 +56,27 @@ for run in plan:
  sha=a.candidate_sha if build=='candidate' else '1d13aedc7a309105ae147f2ed1d79cd18a078b00'
  cmd=[python,'scripts/mnestic_019_campaign.py','--backend',run['backend'],'--seed',str(run['seed']),
       '--build',build,'--engine-sha',sha,'--artifact',str(wheel),'--output',str(out),'--database',str(db)]
- print(time.strftime('%H:%M:%S'),name,flush=True)
+ print(time.strftime('%H:%M:%S'),name,'waiting for quiet window',flush=True)
+ quiet_window()
+ print(time.strftime('%H:%M:%S'),name,'starting',flush=True)
  start=time.monotonic()
  with (a.root/(name+'.log')).open('x') as log:
-  try:
-   result=subprocess.run(cmd,env=env,stdout=log,stderr=subprocess.STDOUT,timeout=7200)
-   status=dict(exit_code=result.returncode,timed_out=False)
-  except subprocess.TimeoutExpired:
-   status=dict(exit_code=None,timed_out=True)
+  process = subprocess.Popen(cmd,env=env,stdout=log,stderr=subprocess.STDOUT)
+  interference=[]
+  while process.poll() is None:
+   interference=competing_builds()
+   if interference or time.monotonic()-start >= 7200:
+    process.terminate()
+    try: process.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+     process.kill();process.wait()
+    break
+   time.sleep(5)
+  status=dict(exit_code=process.returncode,timed_out=time.monotonic()-start>=7200,
+              competing_builds=interference, timing_valid=not interference)
  status.update(run=run,elapsed_seconds=time.monotonic()-start,command=cmd)
  (a.root/(name+'-status.json')).write_text(json.dumps(status,indent=2)+'\n')
  # Only the freshly created, explicit run database is regenerable. Raw data stay.
  if db.exists():shutil.rmtree(db)
  print(status,flush=True)
+ if interference:raise RuntimeError('Concurrent build invalidated timing; partial evidence retained')
