@@ -73,3 +73,24 @@ def test_report_retains_rejected_write_and_refuses_completion(tmp_path, monkeypa
     assert run["mutations"]["attempted"] == run["mutations"]["errors"] == 1
     assert run["mutations"]["repair_limit_rejections"] == 1
     assert run["mutations"]["records"] == rows[1:]
+
+
+def test_success_mutation_logging_does_not_delay_visibility_probes(monkeypatch):
+    chunk = SimpleNamespace(id="new", text="text", entity_ids=["entity"])
+    workload = SimpleNamespace(inc_chunks=[chunk], inc_chunk_emb=[None])
+    events = []
+    monkeypatch.setattr(c, "write_atomic", lambda *args: events.append("write"))
+
+    def observe(_probe):
+        events.append("probe")
+        return {"ids": ["new"], "ms": 0, "error": None}
+
+    def emit(**record):
+        if record["phase"] == "mutation":
+            assert events == ["write"] + ["probe"] * 6
+            assert record["error"] is None
+            raise StopIteration("probes verified; skip unrelated rollback fixture")
+
+    monkeypatch.setattr(c, "observe", observe)
+    with pytest.raises(StopIteration, match="probes verified"):
+        c.freshness(object(), workload, emit)

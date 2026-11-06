@@ -72,7 +72,6 @@ def freshness(a, wl, emit):
             # Do not retry, skip the row, or measure visibility for an uncommitted write.
             raise
         ack = time.perf_counter()
-        emit(phase="mutation", write=i, ms=(ack-start)*1000, error=None, repair_limit=False)
         for name, probe in [
             ("exact", lambda: [r[0] for r in a._run("?[cid] := *chunk{cid}, cid==$id", {"id": chunk.id})["rows"]]),
             ("fts", lambda: a.search_fts(spec)),
@@ -86,6 +85,8 @@ def freshness(a, wl, emit):
             emit(phase="freshness", write=i, signal=name, write_ms=(ack-start)*1000,
                  ack_to_probe_ms=(end-ack)*1000, end_to_end_ms=(end-start)*1000,
                  hit=chunk.id in out["ids"], **out)
+        # Keep the new serialization/flush outside the existing probe timings.
+        emit(phase="mutation", write=i, ms=(ack-start)*1000, error=None, repair_limit=False)
     # Exact rows and both indexes must exclude a failed transaction's unique row.
     try:
         a._run("{ ?[cid,text,emb] <- [['rollback019','rollbacktoken019',$v]] :put chunk {cid=>text,emb} } { ?[x] := *missing019[x] }", {"v": wl.inc_chunk_emb[0].tolist()})
