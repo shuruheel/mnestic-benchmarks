@@ -64,8 +64,15 @@ def freshness(a, wl, emit):
         token = "freshprobe" + str(i)
         spec = QuerySpec(token, wl.inc_chunk_emb[i], chunk.entity_ids[0], 10, 100, 2, 60)
         start = time.perf_counter()
-        write_atomic(a, chunk, wl.inc_chunk_emb[i], chunk.text + " " + token)
+        try:
+            write_atomic(a, chunk, wl.inc_chunk_emb[i], chunk.text + " " + token)
+        except Exception as exc:
+            emit(phase="mutation", write=i, ms=(time.perf_counter()-start)*1000,
+                 error=str(exc), repair_limit="hnsw::repair_limit" in str(exc))
+            # Do not retry, skip the row, or measure visibility for an uncommitted write.
+            raise
         ack = time.perf_counter()
+        emit(phase="mutation", write=i, ms=(ack-start)*1000, error=None, repair_limit=False)
         for name, probe in [
             ("exact", lambda: [r[0] for r in a._run("?[cid] := *chunk{cid}, cid==$id", {"id": chunk.id})["rows"]]),
             ("fts", lambda: a.search_fts(spec)),

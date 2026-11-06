@@ -43,13 +43,19 @@ def main():
         records=[json.loads(x) for x in path.read_text().splitlines()]
         manifest=records[0]['args'];backend=manifest['backend'];build=manifest['build']
         run={'complete':records[-1]['phase']=='complete','phases':{}}
-        for phase in ('E1','E2','E2_1536','E3','freshness'):run['phases'][phase]=sum(x['phase']==phase for x in records)
+        for phase in ('E1','E2','E2_1536','E3','freshness','mutation'):run['phases'][phase]=sum(x['phase']==phase for x in records)
         run['build']=next((x for x in records if x['phase']=='build'),None)
         run['resources']=records[-1] if run['complete'] else None
         run['freshness']={signal:dict(n=len(rows),hits=sum(x['hit'] for x in rows),errors=sum(bool(x['error']) for x in rows))
             for signal in ('exact','fts','graph','vector','decomposed','native')
             if (rows:=[x for x in records if x['phase']=='freshness' and x['signal']==signal])}
         run['rollback']=[x for x in records if x['phase']=='rollback']
+        mutations=[x for x in records if x['phase']=='mutation']
+        run['mutations']={'attempted':len(mutations),
+                          'errors':sum(bool(x['error']) for x in mutations),
+                          'repair_limit_rejections':sum(x['repair_limit'] for x in mutations),
+                          'stops_on_first_error':True,
+                          'records':mutations}
         for name in ('decomposed','native'):
             rows=[x for x in records if x['phase']=='E1' and x['path']==name]
             run[name]=stats(rows) if rows else None
@@ -78,7 +84,7 @@ def main():
                 report['review_triggers'].append(dict(backend=backend,path=path,recall_loss=base['recall']-cand['recall'],p95_delta_ms=delta))
     plan_path=a.root/'plan.json'
     plan=json.loads(plan_path.read_text())['plan'] if plan_path.exists() else []
-    expected={'E1':2000,'E2':2400,'E2_1536':2400,'E3':3200,'freshness':1200}
+    expected={'E1':2000,'E2':2400,'E2_1536':2400,'E3':3200,'freshness':1200,'mutation':200}
     report['all_planned_runs_completed']=len(plan)==12 and all(
         (run:=report['runs'].get(item['name'])) and run['complete'] and run['phases']==expected
         for item in plan)
