@@ -10,7 +10,7 @@ import time
 
 def competing_builds():
     rows = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True).splitlines()
-    names = {'cargo', 'rustc', 'clang', 'clang++', 'cc1', 'cc1plus', 'ld', 'ld64.lld', 'rust-lld'}
+    names = {'cargo', 'rustc', 'clang', 'clang++', 'gcc', 'g++', 'cc1', 'cc1plus', 'ld', 'ld.lld', 'ld64.lld', 'rust-lld'}
     return [row.strip() for row in rows if Path(row.strip().split(None, 1)[-1]).name in names]
 
 

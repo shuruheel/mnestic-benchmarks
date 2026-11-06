@@ -11,7 +11,6 @@ import importlib.metadata
 import json
 import os
 import platform
-import resource
 import subprocess
 import sys
 import time
@@ -25,6 +24,7 @@ from hybrid_recall.adapters.base import QuerySpec, dir_size_bytes
 from hybrid_recall.adapters.mnestic_adapter import MnesticAdapter
 from hybrid_recall.fusion import rrf_fuse
 from hybrid_recall.runner import _specs
+from hybrid_recall.host import machine_metadata, peak_rss_bytes
 from hybrid_recall.workload.generate import generate
 from hybrid_recall.workload.groundtruth import _BM25Index, compute_ground_truth
 
@@ -231,9 +231,7 @@ def main():
          extension_sha256=hashlib.sha256(extension.read_bytes()).hexdigest(),
          package=importlib.metadata.version("mnestic"), python=sys.version, platform=platform.platform(),
          dependency_freeze=subprocess.check_output([sys.executable,"-m","pip","freeze"],text=True),
-         power=subprocess.check_output(["pmset","-g"],text=True),
-         cpu=subprocess.check_output(["sysctl","-n","machdep.cpu.brand_string"],text=True).strip(),
-         ram=subprocess.check_output(["sysctl","-n","hw.memsize"],text=True).strip(),
+         **machine_metadata(args.database),
          concurrency=1, phases=args.phases, warmup=100, e2_queries=20 if args.scale=="small" else 2, e3_pairs=100 if args.scale=="small" else 2,
          limits={"e1_call_timeout":"not set", "e2_sweep_call_seconds":5,
                  "widening_attempts":5,"widening_total_ms":250,"estimated_statement_mib":64,
@@ -283,7 +281,7 @@ def main():
                 record['phase']='E2_1536'
                 emit(**record)
             filtered(a,sensitivity,_specs(sensitivity),emit1536,20 if args.scale=="small" else 2)
-        emit(phase="complete", peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,
+        emit(phase="complete", peak_rss_bytes=peak_rss_bytes(),
              disk_bytes=dir_size_bytes(args.database), elapsed_seconds=time.perf_counter()-start)
     finally:
         a.teardown(); fh.close()

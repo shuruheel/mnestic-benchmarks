@@ -7,6 +7,7 @@ import subprocess
 import signal
 import sys
 import time
+from types import SimpleNamespace as NS
 
 import pytest
 
@@ -27,19 +28,55 @@ def restore_signal_handlers():
 
 def clean_sample():
     return dict(cpu_idle=95, free_disk=5 * g.GIB, ac_power=True,
-                builds=[], busy_background=[], swap_in=0, swap_out=0)
+                builds=[], busy_background=[], swap_in=0, swap_out=0,
+                cpu_steal=0, available_memory=4 * g.GIB)
 
 
 @pytest.mark.parametrize('change', [
     {'cpu_idle': 70}, {'free_disk': g.GIB}, {'ac_power': False},
     {'builds': [{'name': 'cargo'}]}, {'busy_background': [{'name': 'backupd'}]},
     {'swap_in': 17 * 1024 ** 2}, {'swap_out': 16384},
+    {'cpu_steal': 2}, {'available_memory': g.GIB},
 ])
 def test_busy_host_cannot_pass_preflight(change):
     s = clean_sample()
     assert g.quiet(s)
     s.update(change)
     assert not g.quiet(s)
+
+
+@pytest.mark.parametrize('change', [
+    {'cpu_steal': 2}, {'available_memory': g.GIB - 1},
+    {'swap_out': 1}, {'swap_in': 17 * 1024 ** 2},
+])
+def test_resource_pressure_during_run(change):
+    s = clean_sample()
+    assert not g.resource_pressure(s)
+    s.update(change)
+    assert g.resource_pressure(s)
+
+
+def test_linux_sampling_excludes_campaign_but_detects_other_work(monkeypatch):
+    monkeypatch.setattr(g, 'supported_system', lambda: 'Linux')
+    monkeypatch.setattr(g, 'power_status', lambda: {'ac_power': True, 'check': 'server'})
+    monkeypatch.setattr(g, 'swap_counts', lambda: {'Swapins': 0, 'Swapouts': 0})
+    monkeypatch.setattr(g.psutil, 'cpu_times_percent', lambda interval: NS(idle=40, steal=2))
+    monkeypatch.setattr(g.psutil, 'virtual_memory', lambda: NS(available=5 * g.GIB))
+    probes = []
+    def disk_usage(path):
+        probes.append(path)
+        return NS(free=6 * g.GIB)
+    monkeypatch.setattr(g.psutil, 'disk_usage', disk_usage)
+    processes = [NS(pid=pid, info={'name': name}, cpu_percent=lambda: 100)
+                 for pid, name in [(11, 'python'), (12, 'java'), (13, 'gcc')]]
+    monkeypatch.setattr(g.psutil, 'process_iter', lambda _: processes)
+    monkeypatch.setattr(g.os, 'getpid', lambda: 999)
+    monkeypatch.setattr(g.os, 'getpgid', lambda pid: 11 if pid == 11 else 22)
+    s, _ = g.sample({'Swapins': 0, 'Swapouts': 0}, '/benchmark-volume', campaign_pgid=11)
+    assert probes == ['/benchmark-volume']
+    assert [p['name'] for p in s['busy_background']] == ['java', 'gcc']
+    assert [p['name'] for p in s['builds']] == ['gcc']
+    assert s['cpu_steal'] == 2
 
 
 def test_mutated_input_prevents_launch(tmp_path):
@@ -145,7 +182,7 @@ def test_final_sample_interference_cannot_be_completed(tmp_path, monkeypatch, cl
             raise PermissionError('fixture: process still alive')
     monkeypatch.setattr(g, 'stop', stop)
     count = 0
-    def sample(previous):
+    def sample(previous, **kwargs):
         nonlocal count
         count += 1
         s = clean_sample()
@@ -180,9 +217,9 @@ spec=importlib.util.spec_from_file_location('guard',sys.argv.pop(1))
 g=importlib.util.module_from_spec(spec); spec.loader.exec_module(g)
 g.verify_manifest=lambda _:None
 g.swap_counts=lambda:{'Swapins':0,'Swapouts':0}
-def sample(previous):
+def sample(previous, **kwargs):
  time.sleep(.05)
- return dict(cpu_idle=99,free_disk=5*g.GIB,ac_power=True,builds=[],busy_background=[],swap_in=0,swap_out=0),previous
+ return dict(cpu_idle=99,free_disk=5*g.GIB,ac_power=True,builds=[],busy_background=[],swap_in=0,swap_out=0,cpu_steal=0,available_memory=4*g.GIB),previous
 g.sample=sample
 g.main()
 """

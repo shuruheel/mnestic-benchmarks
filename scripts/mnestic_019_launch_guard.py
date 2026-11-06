@@ -1,4 +1,4 @@
-"""Wait for a quiet Mac, then supervise the frozen campaign and retain interference.
+"""Wait for a quiet host, then supervise the frozen campaign and retain interference.
 
 Operational gate only: no workload reduction, retries, or successful resumption
 of an interrupted run. Run from the benchmark repository with its frozen manifest.
@@ -8,15 +8,17 @@ import hashlib
 import json
 import os
 from pathlib import Path
-import re
 import signal
 import subprocess
+import sys
 import time
 
 import psutil
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from hybrid_recall.host import power_status, require_disk_storage, supported_system, swap_counts
 
-BUILD_NAMES = {'cargo', 'rustc', 'clang', 'clang++', 'cc1', 'cc1plus', 'ld', 'ld64.lld', 'rust-lld'}
+BUILD_NAMES = {'cargo', 'rustc', 'clang', 'clang++', 'gcc', 'g++', 'cc1', 'cc1plus', 'ld', 'ld.lld', 'ld64.lld', 'rust-lld'}
 BACKGROUND_NAMES = {
     'fileproviderd', 'ANECompilerService', 'backupd', 'mds', 'mds_stores',
     'mdworker', 'mdworker_shared', 'corespotlightd', 'spotlightknowledged',
@@ -51,15 +53,9 @@ def verify_manifest(manifest):
         raise ValueError('Benchmark harness must be committed and clean')
 
 
-def swap_counts():
-    text = subprocess.check_output(['vm_stat'], text=True)
-    page_size = int(re.search(r'page size of (\d+) bytes', text).group(1))
-    return {key: int(re.search(rf'^{key}:\s+(\d+)', text, re.M).group(1)) * page_size
-            for key in ('Swapins', 'Swapouts')}
-
-
-def sample(previous):
-    idle = psutil.cpu_times_percent(interval=10).idle
+def sample(previous, storage_path='/', campaign_pgid=None):
+    system = supported_system()
+    times = psutil.cpu_times_percent(interval=10)
     now = swap_counts()
     background, builds = [], []
     for process in psutil.process_iter(['pid', 'name']):
@@ -68,16 +64,22 @@ def sample(previous):
             cpu = process.cpu_percent()
             if name in BUILD_NAMES:
                 builds.append({'pid': process.pid, 'name': name})
-            if name in BACKGROUND_NAMES and cpu >= 25:
+            own_process = process.pid == os.getpid() or (
+                campaign_pgid is not None and os.getpgid(process.pid) == campaign_pgid)
+            watched = name in BACKGROUND_NAMES or (system == 'Linux' and not own_process)
+            if watched and cpu >= 25:
                 background.append({'pid': process.pid, 'name': name, 'cpu': cpu})
-        except (psutil.NoSuchProcess, psutil.AccessDenied):
+        except (ProcessLookupError, psutil.NoSuchProcess, psutil.AccessDenied):
             continue
-    power = subprocess.check_output(['pmset', '-g', 'batt'], text=True)
+    power = power_status()
     return {
-        'epoch': time.time(), 'cpu_idle': idle, 'free_disk': psutil.disk_usage('/').free,
+        'epoch': time.time(), 'cpu_idle': times.idle,
+        'cpu_steal': getattr(times, 'steal', 0),
+        'available_memory': psutil.virtual_memory().available,
+        'free_disk': psutil.disk_usage(storage_path).free,
         'swap_in': max(0, now['Swapins'] - previous['Swapins']),
         'swap_out': max(0, now['Swapouts'] - previous['Swapouts']),
-        'ac_power': "drawing from 'AC Power'" in power,
+        'ac_power': power['ac_power'], 'power_check': power['check'],
         'builds': builds, 'busy_background': background,
     }, now
 
@@ -85,7 +87,13 @@ def sample(previous):
 def quiet(s):
     return (s['cpu_idle'] >= 85 and s['free_disk'] >= 3 * GIB and s['ac_power']
             and not s['builds'] and not s['busy_background']
-            and s['swap_in'] <= 16 * 1024 ** 2 and s['swap_out'] == 0)
+            and s['swap_in'] <= 16 * 1024 ** 2 and s['swap_out'] == 0
+            and s['cpu_steal'] <= 1 and s['available_memory'] >= 2 * GIB)
+
+
+def resource_pressure(s):
+    return (s['cpu_steal'] > 1 or s['available_memory'] < GIB
+            or s['swap_in'] > 16 * 1024 ** 2 or s['swap_out'] > 0)
 
 
 def live_group_members(pgid):
@@ -156,6 +164,7 @@ def main():
     if root.exists():
         raise ValueError('Fresh campaign root required')
     verify_manifest(manifest)
+    storage = require_disk_storage(root)
     log_path = Path(str(root) + '-guard.jsonl')
     status_path = Path(str(root) + '-guard-status.json')
     process = None
@@ -174,7 +183,8 @@ def main():
 
         record({'manifest': str(args.manifest), 'manifest_sha256': sha256(args.manifest),
                 'harness_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
-                'guard_sha256': sha256(__file__), 'wait_seconds': args.wait_seconds})
+                'guard_sha256': sha256(__file__), 'wait_seconds': args.wait_seconds,
+                'storage': storage})
         status('waiting_for_quiet')
         deadline = time.monotonic() + args.wait_seconds
         previous = swap_counts()
@@ -186,7 +196,7 @@ def main():
                 pass
         quiet_samples = 0
         while time.monotonic() < deadline:
-            s, previous = sample(previous)
+            s, previous = sample(previous, storage_path=storage['probe_path'])
             record(dict(phase='preflight', **s))
             quiet_samples = quiet_samples + 1 if quiet(s) else 0
             if quiet_samples >= 6:
@@ -202,9 +212,10 @@ def main():
                 status('running', supervisor_pid=process.pid, supervisor_started=True)
                 busy_samples = 0
                 while process.poll() is None:
-                    s, previous = sample(previous)
+                    s, previous = sample(previous, storage_path=storage['probe_path'],
+                                         campaign_pgid=process.pid)
                     record(dict(phase='campaign', **s))
-                    busy_samples = busy_samples + 1 if s['busy_background'] else 0
+                    busy_samples = busy_samples + 1 if s['busy_background'] or resource_pressure(s) else 0
                     if s['builds'] or not s['ac_power'] or s['free_disk'] < GIB or busy_samples >= 3:
                         status('interrupted', timing_valid=False, reason=s,
                                note='Retain raw rows; do not accept this campaign or silently retry.')
