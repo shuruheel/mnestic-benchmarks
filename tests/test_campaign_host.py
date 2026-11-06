@@ -6,6 +6,16 @@ import pytest
 from hybrid_recall import host
 
 
+@pytest.mark.parametrize('name', ['cc', 'c++', 'gcc-15', 'clang-20',
+                                 '/usr/bin/x86_64-linux-gnu-gcc-15',
+                                 'aarch64-linux-gnu-g++', 'ld.lld-20', 'cargo', 'rustc'])
+def test_native_compiler_aliases_and_supervisor_detection(monkeypatch, name):
+    assert host.is_native_build(name)
+    monkeypatch.setattr(host.subprocess, 'check_output',
+                        lambda *a, **kw: f'123 {name}\n124 clangd\n125 python3\n')
+    assert host.competing_builds() == [f'123 {name}']
+
+
 @pytest.mark.parametrize('system,multiplier', [('Linux', 1024), ('Darwin', 1)])
 def test_peak_rss_units(monkeypatch, system, multiplier):
     monkeypatch.setattr(host.platform, 'system', lambda: system)

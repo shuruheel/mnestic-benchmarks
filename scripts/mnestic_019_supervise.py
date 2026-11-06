@@ -5,13 +5,11 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import time
 
-
-def competing_builds():
-    rows = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True).splitlines()
-    names = {'cargo', 'rustc', 'clang', 'clang++', 'gcc', 'g++', 'cc1', 'cc1plus', 'ld', 'ld.lld', 'ld64.lld', 'rust-lld'}
-    return [row.strip() for row in rows if Path(row.strip().split(None, 1)[-1]).name in names]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from hybrid_recall.host import competing_builds
 
 
 def quiet_window():

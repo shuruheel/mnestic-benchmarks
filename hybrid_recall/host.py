@@ -8,6 +8,19 @@ import subprocess
 import psutil
 
 
+def is_native_build(name):
+    name = Path(name).name
+    return name in {'cargo', 'rustc'} or re.fullmatch(
+        r'(?:[\w.+]+-)*(?:gcc|g\+\+|clang|clang\+\+|cc|c\+\+|cc1|cc1plus|collect2|as|ld|ld\.lld|ld64\.lld|rust-lld)(?:-\d+(?:\.\d+)*)?',
+        name) is not None
+
+
+def competing_builds():
+    rows = subprocess.check_output(['ps', '-axo', 'pid=,comm='], text=True).splitlines()
+    return [row.strip() for row in rows
+            if is_native_build(row.strip().split(None, 1)[-1])]
+
+
 def supported_system():
     system = platform.system()
     if system not in {'Darwin', 'Linux'}:

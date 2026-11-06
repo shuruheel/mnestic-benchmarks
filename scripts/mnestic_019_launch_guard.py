@@ -16,9 +16,8 @@ import time
 import psutil
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from hybrid_recall.host import power_status, require_disk_storage, supported_system, swap_counts
+from hybrid_recall.host import is_native_build, power_status, require_disk_storage, supported_system, swap_counts
 
-BUILD_NAMES = {'cargo', 'rustc', 'clang', 'clang++', 'gcc', 'g++', 'cc1', 'cc1plus', 'ld', 'ld.lld', 'ld64.lld', 'rust-lld'}
 BACKGROUND_NAMES = {
     'fileproviderd', 'ANECompilerService', 'backupd', 'mds', 'mds_stores',
     'mdworker', 'mdworker_shared', 'corespotlightd', 'spotlightknowledged',
@@ -62,7 +61,7 @@ def sample(previous, storage_path='/', campaign_pgid=None):
         try:
             name = process.info['name']
             cpu = process.cpu_percent()
-            if name in BUILD_NAMES:
+            if is_native_build(name):
                 builds.append({'pid': process.pid, 'name': name})
             own_process = process.pid == os.getpid() or (
                 campaign_pgid is not None and os.getpgid(process.pid) == campaign_pgid)

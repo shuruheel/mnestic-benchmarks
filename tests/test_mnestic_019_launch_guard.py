@@ -67,15 +67,16 @@ def test_linux_sampling_excludes_campaign_but_detects_other_work(monkeypatch):
         probes.append(path)
         return NS(free=6 * g.GIB)
     monkeypatch.setattr(g.psutil, 'disk_usage', disk_usage)
-    processes = [NS(pid=pid, info={'name': name}, cpu_percent=lambda: 100)
-                 for pid, name in [(11, 'python'), (12, 'java'), (13, 'gcc')]]
+    processes = [NS(pid=11, info={'name': 'python'}, cpu_percent=lambda: 100),
+                 NS(pid=12, info={'name': 'java'}, cpu_percent=lambda: 100),
+                 NS(pid=13, info={'name': 'gcc-15'}, cpu_percent=lambda: 0)]
     monkeypatch.setattr(g.psutil, 'process_iter', lambda _: processes)
     monkeypatch.setattr(g.os, 'getpid', lambda: 999)
     monkeypatch.setattr(g.os, 'getpgid', lambda pid: 11 if pid == 11 else 22)
     s, _ = g.sample({'Swapins': 0, 'Swapouts': 0}, '/benchmark-volume', campaign_pgid=11)
     assert probes == ['/benchmark-volume']
-    assert [p['name'] for p in s['busy_background']] == ['java', 'gcc']
-    assert [p['name'] for p in s['builds']] == ['gcc']
+    assert [p['name'] for p in s['busy_background']] == ['java']
+    assert [p['name'] for p in s['builds']] == ['gcc-15']
     assert s['cpu_steal'] == 2
 
 
