@@ -1,0 +1,133 @@
+{
+  "status": "BLOCKED: hosted LangGraph SQLite concurrent-write gate still fails at c3f70b91 despite local pass. New engine fix and qualification required before timing.",
+  "engine_sha": "c3f70b9174d182993b5ffaf802cf3f20be17fc19",
+  "harness_code_sha": "a6ef95b0db47e6acc119b44e51395c189fd6b719",
+  "harness_sha_note": "Campaign, supervisor, reporter and protocol remain unchanged. Launch-guard cleanup fixed after interrupted attempt; committed clean harness HEAD is recorded at launch.",
+  "harness_files": {
+    "scripts/mnestic_019_campaign.py": "3faf05ad44f4bea51065db437237664822e45e56efd85b9b7d4995dd550e2294",
+    "scripts/mnestic_019_supervise.py": "14f2ebbed6675d7b9121e1f4a3e2b4c1f18313bcc2c77ef315e4f58d35576826",
+    "scripts/mnestic_019_report.py": "3df5974087804cfffdf97723857fc6427a1e822d7d1abf889b838bfcd9c3f753",
+    "hybrid_recall/metrics.py": "6eb2474bf71ace22f069217c8d9951883fc0176c735654fb39e2b196c093025f",
+    "hybrid_recall/runner.py": "1a6a14eefd9d97d3a2e13963a818fc804535c39956e03f4182a7bb195c499069",
+    "hybrid_recall/graphwalk.py": "56d7c740cbb6d42e1a82db82c91f9874d1cc3efd54d54b758660b415c94a8bbd",
+    "hybrid_recall/__init__.py": "7502fa77dd5b237f246abb9f7757116c7aa910df152a564a400567a4c698fcf6",
+    "hybrid_recall/cli.py": "afa1dce393c74470e0fa7edc16ca5390000086ce771ac94eec9d68eccf8e2fec",
+    "hybrid_recall/fusion.py": "e861bab9956b863c9b158c42259ce39dfc83b2c9d40142e70b957e1a4e767ed6",
+    "hybrid_recall/report.py": "1f2c772ae61980629b0f226802cc8a80b9f7b7d97f1053a639d22b0b4e92a317",
+    "hybrid_recall/adapters/arcadedb_adapter.py": "f490460a173b9229f4496e2aa12c1b4f85e25076d2589fd88b852630e807e68c",
+    "hybrid_recall/adapters/kuzu_adapter.py": "163e34f6fbc201650af597137cbddb94ea1f655c61da49c01ad3d15795f65039",
+    "hybrid_recall/adapters/sqlite_adapter.py": "56f989589e69598287d3f21373ed919cb7ecad2582c0c61f05b4497fd8bc5262",
+    "hybrid_recall/adapters/mnestic_adapter.py": "40b1f953255489cf5a1752e5ba725d1852580907098c2a55b32efcb2e92f9a6d",
+    "hybrid_recall/adapters/qdrant_adapter.py": "766607044e511efe7070cbaab0aed929f261fbeaf70999cda9b4f389d3fab839",
+    "hybrid_recall/adapters/lancedb_adapter.py": "1728185badfcc8c4b7d6808b2252560f32262cd624186376d49b44a0891b2fef",
+    "hybrid_recall/adapters/__init__.py": "e26ffa912ffc59712340da72db8f886cf9e3ab62aef671f3875533f54e982414",
+    "hybrid_recall/adapters/neo4j_adapter.py": "47dba90c7e8c5dbbafef497281707feded0aba70c5ad6a3ddb6d9c72f8421dcf",
+    "hybrid_recall/adapters/base.py": "3fa858136a7dc329badf622fc369a09f177797306a7528cd9157dd831a2fbcff",
+    "hybrid_recall/adapters/duckdb_adapter.py": "64e1f23945986504482a82c43cd8ba7dd01bddbb6a723bfa347f4116459f62a4",
+    "hybrid_recall/workload/generate.py": "cd2d3b4af0c349a8d4a59da94cd058f27240dc8a1eb339fa19ec1cdb25d9e1fa",
+    "hybrid_recall/workload/groundtruth.py": "4035a6eebd712750b9e162b291175697dbd5182890ef4825af056b8063ec33a3",
+    "hybrid_recall/workload/__init__.py": "bd2ce7035b16e2e0dc0863f2b5fdca3c2a646d17cacd954d7cbe3814e148375f",
+    "hybrid_recall/workload/embeddings.py": "7ff2a23265d6fe2d87a7bb665d89caf869cc01bfe1e1f306f2374b954becc183",
+    "hybrid_recall/workload/schema.py": "9fe587426e5bfce39bd206aeb0499498c45134a4c95bdeae69cdccec44453793",
+    "configs/scales.yaml": "7e174963496c48f766a99686ebf2bebf17b7e6c1282987ba8050db55972e0814",
+    "pyproject.toml": "3927908ec2352eb9a686be0c4709f309f750db23f854eac3aee4bbf40bc695ea",
+    "scripts/mnestic_019_launch_guard.py": "580385e25ae2df4753320dc567391aee891712ee955975ab262ee66d5a3b6914"
+  },
+  "engine_protocol_sha256": "05188f23d4c934580977aae58522373ae3fa8a7788b8dc584fcd5b144ed688c7",
+  "seeds": [
+    1234,
+    1235,
+    1236
+  ],
+  "backends": [
+    "sqlite",
+    "rocksdb"
+  ],
+  "scale": "small",
+  "run_count": 12,
+  "run_cap_seconds": 7200,
+  "baseline": {
+    "engine_sha": "1d13aedc7a309105ae147f2ed1d79cd18a078b00",
+    "wheel": "/Users/shuruheel/Code/mindgraph/mnestic/release/0.19-qualification/0148693b/baseline/mnestic-0.18.0-cp37-abi3-macosx_11_0_arm64.whl",
+    "sha256": "1c042b400ad3ad464e1c6a0923e4f933b36f59d367dddbb3bc2866d57cbe7abc",
+    "installed": {
+      "python": "3.13.7 (v3.13.7:bcee1c32211, Aug 14 2025, 19:10:51) [Clang 16.0.0 (clang-1600.0.26.6)]",
+      "extension": "/private/tmp/mnestic-019-bench-baseline/lib/python3.13/site-packages/mnestic/mnestic.abi3.so",
+      "extension_sha256": "9225c1d969d1562010082c794b3841520ba8386875b6b132b51374b7884610f4",
+      "freeze": "mnestic @ file:///tmp/mnestic-019-released/mnestic-0.18.0-cp37-abi3-macosx_11_0_arm64.whl#sha256=1c042b400ad3ad464e1c6a0923e4f933b36f59d367dddbb3bc2866d57cbe7abc\nnumpy==2.4.6\npsutil==7.2.2\nPyYAML==6.0.3\n",
+      "extension_matches_wheel": true
+    }
+  },
+  "candidate": {
+    "wheel": "/Users/shuruheel/Code/mindgraph/mnestic/release/0.19-qualification/c3f70b91/candidate/mnestic-0.19.0-cp37-abi3-macosx_11_0_arm64.whl",
+    "sha256": "7728923ab0e64f58751daf8dcae75c5917e4703d97768e3d864c3e1c012c17a2",
+    "installed": {
+      "python": "3.13.7 (v3.13.7:bcee1c32211, Aug 14 2025, 19:10:51) [Clang 16.0.0 (clang-1600.0.26.6)]",
+      "extension": "/private/tmp/mnestic-019-bench-candidate/lib/python3.13/site-packages/mnestic/mnestic.abi3.so",
+      "extension_sha256": "5bb039b6635dffd419f6866c30de46e6e69374f111021fb89187163317124c64",
+      "freeze": "mnestic @ file:///Users/shuruheel/Code/mindgraph/mnestic/release/0.19-qualification/c3f70b91/candidate/mnestic-0.19.0-cp37-abi3-macosx_11_0_arm64.whl#sha256=7728923ab0e64f58751daf8dcae75c5917e4703d97768e3d864c3e1c012c17a2\nnumpy==2.4.6\npsutil==7.2.2\nPyYAML==6.0.3\n",
+      "extension_matches_wheel": true
+    },
+    "compiler": "rustc 1.98.0 (88d9e12ae 2026-08-18)\nbinary: rustc\ncommit-hash: 88d9e12ae178fab0fb5cc050a94da85685d449ea\ncommit-date: 2026-08-18\nhost: aarch64-apple-darwin\nrelease: 1.98.0\nLLVM version: 22.1.8\n",
+    "features": [
+      "compact",
+      "storage-rocksdb",
+      "rdf-io",
+      "columnar-io"
+    ],
+    "profile": "release; freshly compiled RocksDB; no external archive"
+  },
+  "comparison_limitation": "Released package baseline versus local candidate; baseline compiler provenance not established. Not an isolated source-only comparison. HNSW graph RNG is unseeded.",
+  "environment": {
+    "OPENBLAS_NUM_THREADS": "1",
+    "VECLIB_MAXIMUM_THREADS": "1",
+    "PYTHONHASHSEED": "0"
+  },
+  "command": [
+    "/tmp/mnestic-019-bench-baseline/bin/python",
+    "scripts/mnestic_019_supervise.py",
+    "--root",
+    "/tmp/mnestic-019-campaign-c3f70b91-retry-20261106",
+    "--candidate-sha",
+    "c3f70b9174d182993b5ffaf802cf3f20be17fc19",
+    "--baseline-wheel",
+    "/Users/shuruheel/Code/mindgraph/mnestic/release/0.19-qualification/0148693b/baseline/mnestic-0.18.0-cp37-abi3-macosx_11_0_arm64.whl",
+    "--candidate-wheel",
+    "/Users/shuruheel/Code/mindgraph/mnestic/release/0.19-qualification/c3f70b91/candidate/mnestic-0.19.0-cp37-abi3-macosx_11_0_arm64.whl",
+    "--baseline-python",
+    "/tmp/mnestic-019-bench-baseline/bin/python",
+    "--candidate-python",
+    "/tmp/mnestic-019-bench-candidate/bin/python"
+  ],
+  "matched_python_dependencies": true,
+  "launch_command": [
+    "/tmp/mnestic-019-bench-baseline/bin/python",
+    "scripts/mnestic_019_launch_guard.py",
+    "--manifest",
+    "results/sample/0.19/candidate-c3f70b91-retry-20261106-manifest.json",
+    "--wait-seconds",
+    "7200"
+  ],
+  "launch_guard": {
+    "sample_seconds": 10,
+    "quiet_seconds": 60,
+    "minimum_cpu_idle_percent": 85,
+    "minimum_free_disk_gib": 3,
+    "maximum_swap_in_mib_per_sample": 16,
+    "maximum_swap_out_mib_per_sample": 0,
+    "background_cpu_percent_per_core": 25,
+    "background_consecutive_busy_samples_to_stop": 3,
+    "minimum_running_free_disk_gib": 1,
+    "ac_required": true,
+    "on_interference": "stop and retain invalid campaign; no automatic retry",
+    "scope": "additional operational gate; no workload or measurement changes"
+  },
+  "previous_attempt": {
+    "archive": "results/sample/0.19/interrupted-c3f70b91-20261105",
+    "completed_runs": 0,
+    "measurement_rows": 0,
+    "timing_valid": false,
+    "fresh_attempt_authorization": "User requested fixes and retry on November6, then requested completing preparation before reconnecting power."
+  },
+  "qualification_ready": false
+}

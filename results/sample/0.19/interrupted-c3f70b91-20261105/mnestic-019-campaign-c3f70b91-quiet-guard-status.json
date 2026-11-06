@@ -1,0 +1,23 @@
+{
+  "state": "interrupted",
+  "epoch": 1793938919.724664,
+  "guard_pid": 75525,
+  "timing_valid": false,
+  "reason": {
+    "epoch": 1793938919.724517,
+    "cpu_idle": 68.9,
+    "free_disk": 5943422976,
+    "swap_in": 262144,
+    "swap_out": 0,
+    "ac_power": true,
+    "builds": [],
+    "busy_background": [
+      {
+        "pid": 971,
+        "name": "fileproviderd",
+        "cpu": 102.5
+      }
+    ]
+  },
+  "note": "Retain raw rows; do not accept this campaign or silently retry."
+}

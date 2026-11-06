@@ -1,0 +1,30 @@
+{"manifest": "results/sample/0.19/candidate-c3f70b91-manifest.json", "manifest_sha256": "18667d4e230225a45015608b069e0e361d19abe67153d23bc536f31e6ef884e7", "harness_sha": "6dfef02ec2d65499ba9ecf7ba79cd80d947b467e", "guard_sha256": "fce8e9abd05d7feb6927bbe07c2aec065e6f8ff6b6c8bc493f86f7500fab57a8", "wait_seconds": 7200}
+{"state": "waiting_for_quiet", "epoch": 1793938657.915481, "guard_pid": 75525}
+{"phase": "preflight", "epoch": 1793938667.981992, "cpu_idle": 76.5, "free_disk": 4800409600, "swap_in": 327680, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938678.030847, "cpu_idle": 76.8, "free_disk": 4800421888, "swap_in": 327680, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938688.0762198, "cpu_idle": 74.4, "free_disk": 5971476480, "swap_in": 99205120, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938698.1161048, "cpu_idle": 84.2, "free_disk": 5969965056, "swap_in": 5947392, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938708.1605601, "cpu_idle": 83.7, "free_disk": 5972447232, "swap_in": 851968, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938718.201088, "cpu_idle": 86.4, "free_disk": 5972209664, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938728.252351, "cpu_idle": 86.7, "free_disk": 5972250624, "swap_in": 393216, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938738.302711, "cpu_idle": 81.8, "free_disk": 5971832832, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": [{"pid": 71012, "name": "mediaanalysisd", "cpu": 44.4}]}
+{"phase": "preflight", "epoch": 1793938748.339502, "cpu_idle": 81.3, "free_disk": 5971423232, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": [{"pid": 71012, "name": "mediaanalysisd", "cpu": 48.0}]}
+{"phase": "preflight", "epoch": 1793938758.3909812, "cpu_idle": 88.5, "free_disk": 5971398656, "swap_in": 3883008, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938768.4468591, "cpu_idle": 78.4, "free_disk": 6059548672, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938778.498789, "cpu_idle": 74.5, "free_disk": 6059061248, "swap_in": 37601280, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938788.5496871, "cpu_idle": 73.3, "free_disk": 6058491904, "swap_in": 131072, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938798.600884, "cpu_idle": 88.7, "free_disk": 6058217472, "swap_in": 10289152, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938808.6557891, "cpu_idle": 89.3, "free_disk": 6058065920, "swap_in": 589824, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938818.7059991, "cpu_idle": 91.1, "free_disk": 6058045440, "swap_in": 131072, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938828.750088, "cpu_idle": 90.7, "free_disk": 6057869312, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938838.798819, "cpu_idle": 91.4, "free_disk": 6057803776, "swap_in": 393216, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "preflight", "epoch": 1793938848.8482492, "cpu_idle": 91.3, "free_disk": 6057689088, "swap_in": 131072, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"state": "running", "epoch": 1793938849.407249, "guard_pid": 75525, "supervisor_pid": 75707, "supervisor_started": true}
+{"phase": "campaign", "epoch": 1793938859.460938, "cpu_idle": 90.5, "free_disk": 6057500672, "swap_in": 901120, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "campaign", "epoch": 1793938869.5123498, "cpu_idle": 90.3, "free_disk": 6057496576, "swap_in": 835584, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "campaign", "epoch": 1793938879.5551229, "cpu_idle": 85.7, "free_disk": 6055448576, "swap_in": 180224, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "campaign", "epoch": 1793938889.6077461, "cpu_idle": 91.1, "free_disk": 6055424000, "swap_in": 1277952, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": []}
+{"phase": "campaign", "epoch": 1793938899.649152, "cpu_idle": 76.0, "free_disk": 6054580224, "swap_in": 786432, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": [{"pid": 971, "name": "fileproviderd", "cpu": 92.0}]}
+{"phase": "campaign", "epoch": 1793938909.68876, "cpu_idle": 77.6, "free_disk": 6055227392, "swap_in": 2015232, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": [{"pid": 971, "name": "fileproviderd", "cpu": 103.1}]}
+{"phase": "campaign", "epoch": 1793938919.724517, "cpu_idle": 68.9, "free_disk": 5943422976, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": [{"pid": 971, "name": "fileproviderd", "cpu": 102.5}]}
+{"state": "interrupted", "epoch": 1793938919.724664, "guard_pid": 75525, "timing_valid": false, "reason": {"epoch": 1793938919.724517, "cpu_idle": 68.9, "free_disk": 5943422976, "swap_in": 262144, "swap_out": 0, "ac_power": true, "builds": [], "busy_background": [{"pid": 971, "name": "fileproviderd", "cpu": 102.5}]}, "note": "Retain raw rows; do not accept this campaign or silently retry."}

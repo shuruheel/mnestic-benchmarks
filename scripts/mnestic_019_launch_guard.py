@@ -30,6 +30,8 @@ def sha256(path):
 
 
 def verify_manifest(manifest):
+    if manifest.get('qualification_ready') is not True:
+        raise ValueError('Candidate qualification is not cleared for timing')
     for path, expected in manifest['harness_files'].items():
         if sha256(path) != expected:
             raise ValueError(f'Frozen harness input changed: {path}')
@@ -86,23 +88,54 @@ def quiet(s):
             and s['swap_in'] <= 16 * 1024 ** 2 and s['swap_out'] == 0)
 
 
-def stop(process):
-    # The leader may already have exited while its descendants still run.
+def live_group_members(pgid):
+    """Include orphaned descendants, but not exited/zombie group members."""
+    members = []
+    for member in psutil.process_iter(['pid']):
+        try:
+            if os.getpgid(member.pid) == pgid and member.status() not in (
+                    psutil.STATUS_ZOMBIE, psutil.STATUS_DEAD):
+                members.append(member)
+        except (ProcessLookupError, psutil.NoSuchProcess):
+            pass
+    return members
+
+
+def signal_group(pgid, sig):
     try:
-        os.killpg(process.pid, signal.SIGTERM)
+        os.killpg(pgid, sig)
     except ProcessLookupError:
         pass
-    try:
-        try:
-            process.wait(timeout=10)
-        except subprocess.TimeoutExpired:
-            pass
-    finally:
-        try:
-            os.killpg(process.pid, signal.SIGKILL)
-        except ProcessLookupError:
-            pass
-        process.wait()
+    except PermissionError:
+        # A denied group signal is harmless only if no live member remains.
+        # Otherwise use PID-reuse-aware Process objects to signal those members;
+        # a real denial must propagate instead of claiming cleanup succeeded.
+        for member in live_group_members(pgid):
+            try:
+                member.send_signal(sig)
+            except psutil.NoSuchProcess:
+                pass
+
+
+def stop(process):
+    if process.pid == os.getpgrp():
+        raise RuntimeError('Refusing to stop the guard process group')
+    if live_group_members(process.pid):
+        signal_group(process.pid, signal.SIGTERM)
+    deadline = time.monotonic() + 10
+    while live_group_members(process.pid) and time.monotonic() < deadline:
+        process.poll()  # Reap the leader without overlooking its descendants.
+        time.sleep(.05)
+    if live_group_members(process.pid):
+        signal_group(process.pid, signal.SIGKILL)
+    deadline = time.monotonic() + 5
+    while live_group_members(process.pid) and time.monotonic() < deadline:
+        process.poll()
+        time.sleep(.05)
+    remaining = live_group_members(process.pid)
+    if remaining:
+        raise RuntimeError(f'Cleanup left live processes: {[p.pid for p in remaining]}')
+    process.wait(timeout=1)
 
 
 def termination_requested(signum, _frame):
@@ -127,14 +160,17 @@ def main():
     status_path = Path(str(root) + '-guard-status.json')
     process = None
     with log_path.open('x') as log:
+        last_status = None
         def record(event):
             log.write(json.dumps(event) + '\n')
             log.flush()
 
         def status(state, **fields):
+            nonlocal last_status
             result = dict(state=state, epoch=time.time(), guard_pid=os.getpid(), **fields)
             status_path.write_text(json.dumps(result, indent=2) + '\n')
             record(result)
+            last_status = result
 
         record({'manifest': str(args.manifest), 'manifest_sha256': sha256(args.manifest),
                 'harness_sha': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
@@ -180,7 +216,13 @@ def main():
                 raise
             finally:
                 if process is not None:
-                    stop(process)
+                    try:
+                        stop(process)
+                        record({'phase': 'cleanup', 'epoch': time.time(), 'success': True})
+                    except Exception as error:
+                        status('cleanup_failed', timing_valid=False,
+                               error=repr(error), previous_status=last_status)
+                        raise
         results = [json.loads(p.read_text()) for p in root.glob('*-status.json')]
         complete = (process.returncode == 0 and len(results) == manifest['run_count']
                     and all(r['exit_code'] == 0 and r['timing_valid'] and not r['timed_out'] for r in results))

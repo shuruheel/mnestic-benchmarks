@@ -45,9 +45,15 @@ def test_busy_host_cannot_pass_preflight(change):
 def test_mutated_input_prevents_launch(tmp_path):
     source = tmp_path / 'input.py'
     source.write_text('frozen')
-    manifest = {'harness_files': {str(source): g.sha256(source)}}
+    manifest = {'qualification_ready': True, 'harness_files': {str(source): g.sha256(source)}}
     source.write_text('changed')
     with pytest.raises(ValueError, match='Frozen harness input changed'):
+        g.verify_manifest(manifest)
+
+
+@pytest.mark.parametrize('manifest', [{}, {'qualification_ready': False}])
+def test_uncleared_candidate_cannot_launch(manifest):
+    with pytest.raises(ValueError, match='qualification is not cleared'):
         g.verify_manifest(manifest)
 
 
@@ -115,7 +121,8 @@ def test_stop_reaches_child_after_leader_exits(tmp_path):
         g.stop(p)
 
 
-def test_final_sample_interference_cannot_be_completed(tmp_path, monkeypatch):
+@pytest.mark.parametrize('cleanup_fails', [False, True])
+def test_final_sample_interference_cannot_be_completed(tmp_path, monkeypatch, cleanup_fails):
     manifest = tmp_path / 'manifest.json'
     root = tmp_path / 'campaign'
     manifest.write_text(json.dumps({'command': ['unused', '--root', str(root)], 'run_count': 0}))
@@ -132,7 +139,11 @@ def test_final_sample_interference_cannot_be_completed(tmp_path, monkeypatch):
     process = Process()
     monkeypatch.setattr(g.subprocess, 'Popen', lambda *a, **kw: process)
     stopped = []
-    monkeypatch.setattr(g, 'stop', stopped.append)
+    def stop(process):
+        stopped.append(process)
+        if cleanup_fails:
+            raise PermissionError('fixture: process still alive')
+    monkeypatch.setattr(g, 'stop', stop)
     count = 0
     def sample(previous):
         nonlocal count
@@ -143,9 +154,20 @@ def test_final_sample_interference_cannot_be_completed(tmp_path, monkeypatch):
             s['ac_power'] = False
         return s, previous
     monkeypatch.setattr(g, 'sample', sample)
-    assert g.main() == 3
+    if cleanup_fails:
+        with pytest.raises(PermissionError, match='still alive'):
+            g.main()
+    else:
+        assert g.main() == 3
     assert stopped == [process]
-    assert json.loads(Path(str(root) + '-guard-status.json').read_text())['state'] == 'interrupted'
+    result = json.loads(Path(str(root) + '-guard-status.json').read_text())
+    if cleanup_fails:
+        assert result['state'] == 'cleanup_failed'
+        assert result['previous_status']['state'] == 'interrupted'
+        assert result['previous_status']['reason']['ac_power'] is False
+    else:
+        assert result['state'] == 'interrupted'
+    assert result['timing_valid'] is False
 
 
 @pytest.mark.parametrize('signum', [signal.SIGTERM, signal.SIGHUP])
@@ -189,3 +211,43 @@ g.main()
             p.wait()
         if supervisor and g.psutil.pid_exists(supervisor):
             os.killpg(supervisor, signal.SIGKILL)
+
+
+def test_empty_group_permission_race_is_harmless(monkeypatch):
+    def denied(*_):
+        raise PermissionError('fixture: group already exited')
+    monkeypatch.setattr(g.os, 'killpg', denied)
+    monkeypatch.setattr(g, 'live_group_members', lambda _: [])
+    g.signal_group(123, signal.SIGKILL)
+
+
+@pytest.mark.parametrize('member_denies', [False, True])
+def test_group_permission_failure_checks_live_members(monkeypatch, member_denies):
+    sent = []
+    class Member:
+        def send_signal(self, sig):
+            sent.append(sig)
+            if member_denies:
+                raise g.psutil.AccessDenied(pid=123)
+    def denied(*_):
+        raise PermissionError('fixture: group signal denied')
+    monkeypatch.setattr(g.os, 'killpg', denied)
+    monkeypatch.setattr(g, 'live_group_members', lambda _: [Member()])
+    if member_denies:
+        with pytest.raises(g.psutil.AccessDenied):
+            g.signal_group(123, signal.SIGKILL)
+    else:
+        g.signal_group(123, signal.SIGKILL)
+    assert sent == [signal.SIGKILL]
+
+
+def test_stop_does_not_signal_an_empty_group(monkeypatch):
+    waited = []
+    class Process:
+        pid = 123
+        def wait(self, timeout):
+            waited.append(timeout)
+    monkeypatch.setattr(g, 'live_group_members', lambda _: [])
+    monkeypatch.setattr(g.os, 'killpg', lambda *args: pytest.fail('empty group must not be signalled'))
+    g.stop(Process())
+    assert waited == [1]

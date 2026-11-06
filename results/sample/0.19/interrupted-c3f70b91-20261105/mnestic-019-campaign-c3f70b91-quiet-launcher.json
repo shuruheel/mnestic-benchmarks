@@ -1,0 +1,15 @@
+{
+  "guard_pid": 75525,
+  "caffeinate_pid": 75526,
+  "command": [
+    "/tmp/mnestic-019-bench-baseline/bin/python",
+    "scripts/mnestic_019_launch_guard.py",
+    "--manifest",
+    "results/sample/0.19/candidate-c3f70b91-manifest.json",
+    "--wait-seconds",
+    "7200"
+  ],
+  "cwd": "/Users/shuruheel/Code/mindgraph/mnestic-benchmarks",
+  "launcher_log": "/tmp/mnestic-019-campaign-c3f70b91-quiet-launcher.log",
+  "status": "/tmp/mnestic-019-campaign-c3f70b91-quiet-guard-status.json"
+}
