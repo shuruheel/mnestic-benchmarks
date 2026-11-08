@@ -2,9 +2,29 @@
 
 import argparse
 from collections import defaultdict
+from fractions import Fraction
 import json
 from pathlib import Path
 import numpy as np
+
+
+def exact_mean_recall(rows):
+    """This frozen k=10 campaign records per-query hits/min(10, truth size).
+
+    Recover those small integer fractions before comparing a strict 1pp loss.
+    Float averaging can otherwise turn an exact 1pp loss into a false alarm.
+    Refuse a different recall contract rather than silently rounding its values.
+    """
+    values = []
+    for row in rows:
+        if row.get("recall") is None:
+            continue
+        value = row["recall"]
+        fraction = Fraction(value).limit_denominator(10)
+        if not 0 <= value <= 1 or abs(float(fraction) - value) > 1e-12:
+            raise ValueError("Recall is not a per-query fraction for the frozen k=10 campaign")
+        values.append(fraction)
+    return sum(values, Fraction(0)) / len(values) if values else None
 
 
 def stats(rows):
@@ -80,8 +100,11 @@ def screen_comparisons(cells):
                 reasons.append("p95_latency")
         loss = None
         if base["recall"] is not None and cand["recall"] is not None:
-            loss = base["recall"] - cand["recall"]
-            if loss > 0.01:
+            exact_loss = exact_mean_recall(versions["baseline"]) - exact_mean_recall(
+                versions["candidate"]
+            )
+            loss = float(exact_loss)
+            if exact_loss > Fraction(1, 100):
                 reasons.append("recall")
         if cand["errors"] or cand["duplicates"] or cand["ineligible"]:
             reasons.append("candidate_errors_or_invalid_results")

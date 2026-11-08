@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import sys
 
+import pytest
+
 spec = importlib.util.spec_from_file_location(
     "campaign_report", Path(__file__).parents[1] / "scripts/mnestic_019_report.py"
 )
@@ -97,3 +99,38 @@ def test_candidate_errors_remain_visible_without_a_latency_increase():
     assert not issues
     assert triggers[0]["candidate_errors"] == 1
     assert triggers[0]["reasons"] == ["candidate_errors_or_invalid_results"]
+
+
+@pytest.mark.parametrize("lost_neighbors,expected", [(2, False), (3, True), (10, True)])
+def test_strict_one_percentage_point_recall_boundary(lost_neighbors, expected):
+    baseline = [dict(ms=10.0, recall=1.0) for _ in range(20)]
+    candidate = [dict(ms=10.0, recall=1.0) for _ in range(20)]
+    candidate[18]["recall"] = (10 - lost_neighbors) / 10
+    cells = {
+        ("E2_1536", "sqlite", ("random", "1.0", "filter_ef100"), 1236): {
+            "baseline": baseline,
+            "candidate": candidate,
+        }
+    }
+    triggers, issues = report.screen_comparisons(cells)
+    assert not issues
+    assert bool(triggers) is expected
+    if expected:
+        assert triggers[0]["recall_loss"] == lost_neighbors / 200
+        assert triggers[0]["reasons"] == ["recall"]
+
+
+def test_recall_boundary_does_not_hide_latency_or_na_denominators():
+    baseline = [dict(ms=10.0, recall=1.0) for _ in range(20)] + [dict(ms=10.0, recall=None)]
+    candidate = [dict(ms=14.0, recall=1.0) for _ in range(20)] + [dict(ms=14.0, recall=None)]
+    candidate[0]["recall"] = 0.8
+    cells = {("E2", "sqlite", (), None): {"baseline": baseline, "candidate": candidate}}
+    triggers, issues = report.screen_comparisons(cells)
+    assert not issues
+    assert triggers[0]["reasons"] == ["p95_latency"]
+    assert triggers[0]["recall_loss"] == 0.01
+
+
+def test_exact_recall_rejects_a_different_query_contract():
+    with pytest.raises(ValueError, match="frozen k=10"):
+        report.exact_mean_recall([dict(recall=0.12345)])
