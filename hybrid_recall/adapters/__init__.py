@@ -10,13 +10,14 @@ REGISTRY: dict[str, str] = {
     "duckdb": "hybrid_recall.adapters.duckdb_adapter:DuckDBAdapter",
     "kuzu": "hybrid_recall.adapters.kuzu_adapter:KuzuAdapter",
     "lancedb": "hybrid_recall.adapters.lancedb_adapter:LanceDBAdapter",
+    "relate": "hybrid_recall.adapters.relate_adapter:RelateAdapter",
     # phase 2 (server engines, gated behind the [server] extra + docker)
     "neo4j": "hybrid_recall.adapters.neo4j_adapter:Neo4jAdapter",
     "qdrant": "hybrid_recall.adapters.qdrant_adapter:QdrantAdapter",
     "arcadedb": "hybrid_recall.adapters.arcadedb_adapter:ArcadeDBAdapter",
 }
 
-EMBEDDED = ("mnestic", "sqlite", "duckdb", "kuzu", "lancedb")
+EMBEDDED = ("mnestic", "sqlite", "duckdb", "kuzu", "lancedb", "relate")
 SERVER = ("neo4j", "qdrant", "arcadedb")
 
 

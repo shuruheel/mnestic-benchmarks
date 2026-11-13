@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "name": "small",
+    "seed": 1234,
+    "dim": 384,
+    "k": 10,
+    "pool_n": 100,
+    "graph_hops": 2,
+    "rrf_k": 60.0,
+    "clusters": 64,
+    "n_entities": 10000,
+    "n_edges": 50000,
+    "n_chunks": 40000,
+    "n_queries": 1000,
+    "n_incremental": 200,
+    "real_embeddings": false
+  },
+  "environment": {
+    "python": "3.12.9",
+    "platform": "macOS-27.2-arm64-arm-64bit",
+    "processor": "arm"
+  },
+  "generated_at": "2026-11-12T02:58:53Z",
+  "results": [
+    {
+      "engine": "mnestic",
+      "version": "(sqlite)",
+      "scale": "small",
+      "capabilities": {
+        "vector": true,
+        "fts": true,
+        "graph": true,
+        "native_fusion": true,
+        "fusion_locus": "native",
+        "engines_needed": 1,
+        "embedded": true,
+        "transactional": true,
+        "time_travel": true,
+        "incremental_index": true,
+        "notes": "Single embedded engine for vector + full-text + Datalog graph; hybrid_search() fuses vector+FTS in one call; time-travel via Validity."
+      },
+      "ok": true,
+      "error": "",
+      "recall_at_k": 0.95875,
+      "recall_k": 10,
+      "ingest_rows": 349492,
+      "ingest_seconds": 9.911262208013795,
+      "ingest_rows_per_sec": 35262.10816190663,
+      "build_seconds": 12.042246917029843,
+      "disk_mb": 408.96484375,
+      "build_peak_rss_mb": 467.421875,
+      "latency_ms": {
+        "p50": 188.66989549132995,
+        "p95": 466.93851637828584,
+        "p99": 805.7408764498515
+      },
+      "mean_latency_ms": 228.92182123061502,
+      "qps_serial": 4.368303530979703,
+      "qps_concurrent": 26.806232822268125,
+      "concurrency": 8,
+      "query_peak_rss_mb": 95.609375,
+      "avg_round_trips": 3,
+      "leg_latency_ms": {
+        "vector": {
+          "p50": 124.04531249194406,
+          "p95": 297.6821159769314,
+          "p99": 569.3691042531277
+        },
+        "fts": {
+          "p50": 45.21708350512199,
+          "p95": 190.41581841302101,
+          "p99": 336.98614340624727
+        },
+        "graph": {
+          "p50": 7.9750000149942935,
+          "p95": 30.65935240301768,
+          "p99": 92.30106040136884
+        },
+        "fusion": {
+          "p50": 0.08566598990000784,
+          "p95": 0.10021732596214859,
+          "p99": 0.13289458351209757
+        }
+      },
+      "n_queries": 400,
+      "native_fusion_latency_ms": {
+        "p50": 130.84760447964072,
+        "p95": 1340.6330707744937,
+        "p99": 4453.798881428077
+      },
+      "native_fusion_recall": 0.877,
+      "native_fusion_signals": 3,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 437.7082500141114,
+        "p95": 1097.0599340158512,
+        "p99": 3809.407001346165
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 1.0,
+      "freshness_graph": 1.0,
+      "freshness_fused": 1.0,
+      "filtered_kind_rows": 756,
+      "filtered_prepare_seconds": 0.36089116701623425,
+      "filtered": {
+        "post_filter": {
+          "recall": 0.1835,
+          "latency_ms": {
+            "p50": 104.00300050969236,
+            "p95": 315.2626812778179,
+            "p99": 502.7013797027755
+          }
+        },
+        "search_filter_ef100": {
+          "recall": 0.1835,
+          "latency_ms": {
+            "p50": 160.31839599600062,
+            "p95": 700.3472993761528,
+            "p99": 1282.6301596086678
+          }
+        },
+        "search_filter_ef400": {
+          "recall": 0.7235,
+          "latency_ms": {
+            "p50": 138.748604018474,
+            "p95": 395.2728516975184,
+            "p99": 517.6377437380141
+          }
+        },
+        "search_filter_ef1600": {
+          "recall": 0.995,
+          "latency_ms": {
+            "p50": 1863.1406665081158,
+            "p95": 7214.995397627351,
+            "p99": 10791.538134864508
+          }
+        },
+        "partial_index": {
+          "recall": 0.9965,
+          "latency_ms": {
+            "p50": 27.401437488151714,
+            "p95": 155.15411043597837,
+            "p99": 380.60251883405715
+          }
+        },
+        "exact_scan": {
+          "recall": 1.0,
+          "latency_ms": {
+            "p50": 135.990604525432,
+            "p95": 265.1274062198353,
+            "p99": 2543.2616211904533
+          }
+        }
+      }
+    },
+    {
+      "engine": "relate",
+      "version": "1.0.0",
+      "scale": "small",
+      "capabilities": {
+        "vector": true,
+        "fts": true,
+        "graph": true,
+        "native_fusion": true,
+        "fusion_locus": "native",
+        "engines_needed": 1,
+        "embedded": true,
+        "transactional": true,
+        "time_travel": false,
+        "incremental_index": true,
+        "notes": "Experimental Neo4j Labs engine: whole graph in RAM, WAL + snapshot durability; vector search is an exact scan; native WRRF fusion of vector+FTS is a preview."
+      },
+      "ok": true,
+      "error": "",
+      "recall_at_k": 1.0,
+      "recall_k": 10,
+      "ingest_rows": 179746,
+      "ingest_seconds": 29.77317362499889,
+      "ingest_rows_per_sec": 6037.179719701671,
+      "build_seconds": 1.5304197919904254,
+      "disk_mb": 261.8600015640259,
+      "build_peak_rss_mb": 729.875,
+      "latency_ms": {
+        "p50": 440.066791488789,
+        "p95": 688.6006228887688,
+        "p99": 989.8401748389002
+      },
+      "mean_latency_ms": 466.98897376205423,
+      "qps_serial": 2.1413781827524088,
+      "qps_concurrent": 0.0,
+      "concurrency": 0,
+      "query_peak_rss_mb": 939.84375,
+      "avg_round_trips": 3,
+      "leg_latency_ms": {
+        "vector": {
+          "p50": 291.7769374907948,
+          "p95": 463.6124898970593,
+          "p99": 620.9550310613121
+        },
+        "fts": {
+          "p50": 122.9066870000679,
+          "p95": 200.02587017079347,
+          "p99": 291.8681535363429
+        },
+        "graph": {
+          "p50": 23.338916507782415,
+          "p95": 49.83790623373345,
+          "p99": 73.01000007719266
+        },
+        "fusion": {
+          "p50": 0.1705625036265701,
+          "p95": 0.4784649267094207,
+          "p99": 0.7050779508426783
+        }
+      },
+      "n_queries": 400,
+      "native_fusion_latency_ms": {
+        "p50": 185.9355000196956,
+        "p95": 536.3370056526038,
+        "p99": 737.7067915000949
+      },
+      "native_fusion_recall": 0.8150000000000001,
+      "native_fusion_signals": 3,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 4.471416992601007,
+        "p95": 15.872812533052615,
+        "p99": 37.713207866763995
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 1.0,
+      "freshness_graph": 1.0,
+      "freshness_fused": 1.0,
+      "filtered_kind_rows": 756,
+      "filtered_prepare_seconds": 0.0009776250226423144,
+      "filtered": {
+        "search_filter": {
+          "recall": 1.0,
+          "latency_ms": {
+            "p50": 45.062499499181286,
+            "p95": 61.78399793279812,
+            "p99": 81.88096213620132
+          }
+        },
+        "exact_scan": {
+          "recall": 1.0,
+          "latency_ms": {
+            "p50": 37.84133298904635,
+            "p95": 44.9583756737411,
+            "p99": 50.55708125059022
+          }
+        }
+      }
+    }
+  ]
+}

@@ -25,11 +25,14 @@ sqlite = ["sqlite-vec>=0.1.6", "apsw>=3.45"]  # apsw: loadable-extension support
 duckdb = ["duckdb>=1.1.0"]
 kuzu = ["kuzu==0.10.0"]            # archived Oct 2025; last release, still installable
 lancedb = ["lancedb>=0.15"]        # uses LanceDB's native FTS (use_tantivy=False)
+relate = ["relate-db>=1.0"]        # Neo4j Labs, experimental; import `relate`
 server = ["neo4j>=5.20", "qdrant-client>=1.10", "requests>=2.31"]  # phase 2
 real-embeddings = ["sentence-transformers>=2.6"]
+quality = ["fastembed>=0.8"]       # `hybrid-recall quality`: BEIR embeddings
 plots = ["matplotlib>=3.7"]
 embedded = [
     "mnestic>=0.8.2",
+    "relate-db>=1.0",
     "sqlite-vec>=0.1.6",
     "apsw>=3.45",
     "duckdb>=1.1.0",
@@ -38,6 +41,7 @@ embedded = [
 ]
 all = [
     "mnestic>=0.8.2",
+    "relate-db>=1.0",
     "sqlite-vec>=0.1.6",
     "apsw>=3.45",
     "duckdb>=1.1.0",

@@ -14,6 +14,7 @@ natively, and where it can't. For live numbers on your hardware see
 | DuckDB (VSS + FTS) | ✅ HNSW¹ | ✅ BM25 | ⚠️ recursive CTE | ❌ | app-side | 1 | ✅ | active |
 | Kuzu | ✅ HNSW | ✅ BM25 | ✅ Cypher | ❌ | app-side | 1 | ✅ | **archived Oct 2025** ² |
 | LanceDB | ✅ | ✅ | ❌ | ✅ RRF reranker | native (vec+FTS) | 2 | ✅ | active |
+| Relate | ✅ exact scan⁴ | ✅ | ✅ Cypher | ✅ `COMBINE … WRRF` (preview) | native (vec+FTS) | **1** | ✅ | experimental (Neo4j Labs) |
 | Neo4j | ✅ index | ✅ Lucene | ✅ Cypher | ❌ | app-side | 1 | ❌ server | active (phase 2) |
 | Qdrant | ✅ | ⚠️ sparse only³ | ❌ | ❌ | app-side | 3 | ❌ server | active (phase 2) |
 | ArcadeDB | ✅ HNSW | ✅ Lucene | ✅ | ❌ | app-side | 1 | ❌ server | active (phase 2, scaffold) |
@@ -24,6 +25,8 @@ which carries a documented risk of index corruption on unclean shutdown.
 vector/FTS extensions on a clean machine in 2026.
 ³ Qdrant offers full-text *filtering* and BM25 via sparse vectors, but no BM25 ranking out
 of the box and no graph traversal; this pass wires its vector signal only.
+⁴ Relate's vector index is scanned exactly at query time (no ANN graph), and the whole graph
+is held in RAM; durability is a fsync'd WAL plus snapshots.
 
 ## The headline
 
@@ -36,9 +39,10 @@ Three signals, fused, is the task. Three things separate the field:
    (the graph-less engines land far below the engines that have all three). This is exactly
    why graph-augmented retrieval exists.
 
-2. **How many systems, and how much glue?** mnestic is the only engine here that serves all
-   three signals from **one embedded store** *and* fuses vector+full-text in a **single
-   call** (`hybrid_search`, RRF inside the engine). SQLite, DuckDB, and Kuzu also keep all
+2. **How many systems, and how much glue?** mnestic and Relate serve all three signals
+   from **one embedded store** *and* fuse vector+full-text in a **single call** (mnestic's
+   `hybrid_search`, which can also fuse a graph leg; Relate's preview `COMBINE … USING
+   WRRF`). SQLite, DuckDB, and Kuzu also keep all
    three in one process but fuse in application code (three queries + a Python RRF). LanceDB
    fuses vector+FTS natively but needs a *second* system for graph; Qdrant needs separate
    systems for full-text and graph.
@@ -57,9 +61,10 @@ Three signals, fused, is the task. Three things separate the field:
 ### mnestic
 A maintained fork of CozoDB (MPL-2.0), tuned as a substrate for agentic memory. One
 embedded engine provides an HNSW vector index, an FTS index, and full Datalog graph
-traversal, plus `hybrid_search` for single-call RRF over vector+FTS — it is the **only engine
-here that serves all three signals from one embedded store**, and it comfortably beats the
-graph-less vector engines on fused recall.
+traversal, plus `hybrid_search` for single-call RRF over vector+FTS (and optionally a graph
+leg). It comfortably beats the graph-less vector engines on fused recall. Relate is the other
+engine here with all three signals and native fusion in one embedded store; see its note and
+[HEAD-TO-HEAD.md](HEAD-TO-HEAD.md).
 
 Where it stands, measured honestly against the exact oracle (component agreement at the
 `small` scale): **vector ≈ 0.99 and graph = 1.00 — essentially perfect**. Full-text was
@@ -132,6 +137,19 @@ A fast embedded multimodal retrieval engine with native vector + full-text and a
 contribute the graph signal — its fused recall is capped well below the all-three engines,
 and a real graph-augmented memory built on LanceDB needs a separate graph store. Its
 vector/FTS latency is excellent.
+
+### Relate
+Neo4j Labs' embedded property-graph engine in Rust (`pip install relate-db`, Apache-2.0),
+explicitly an *experimental* Labs project outside Neo4j's supported products. It serves all
+three signals in one embedded store through Cypher: a vector index, a full-text index, and
+native traversal, with Neo4j's `SEARCH` clause and a preview `COMBINE … USING WRRF` fusion.
+Architecture shapes its numbers: the live graph is held in RAM (no paging or spill), and
+both search indexes are evaluated by scanning their population at query time. Its vector leg
+is therefore exact (it matches the oracle) and filtered vector search is complete, with
+latency that grows linearly with the corpus. Its graph leg uses the same two-query Cypher
+shape as the Kuzu adapter. The concurrent-QPS phase is skipped (`relate.threadsafety == 1`).
+Measured against mnestic on retrieval, churn, reopen, crash durability and memory in
+[HEAD-TO-HEAD.md](HEAD-TO-HEAD.md).
 
 ### Neo4j *(phase 2)*
 Graph-native server with a 5.x vector index and a Lucene full-text index — all three signals

@@ -109,6 +109,21 @@ class Adapter(abc.ABC):
         axis. Override per engine; default signals "not supported"."""
         raise NotImplementedError
 
+    # --- lifecycle axis (optional; see hybrid_recall/lifecycle.py) ---------
+    # An engine opts in by implementing all four. `reopen` opens a store that a previous
+    # process populated (no schema creation); the rest mutate or probe one memory.
+    def reopen(self, meta: WorkloadMeta, workdir: Path) -> None:
+        raise NotImplementedError
+
+    def update_memory(self, cid: str, text: str, vector) -> None:
+        raise NotImplementedError
+
+    def delete_memory(self, cid: str) -> None:
+        raise NotImplementedError
+
+    def has_memory(self, cid: str) -> bool:
+        raise NotImplementedError
+
     # --- native component retrievals (override what the engine supports) -
     def search_vector(self, spec: QuerySpec) -> list[str]:
         raise NotImplementedError

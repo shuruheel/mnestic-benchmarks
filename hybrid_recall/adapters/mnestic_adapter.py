@@ -21,6 +21,16 @@ from .base import Adapter, BuildStats, Capabilities, IngestStats, QuerySpec, dir
 _BATCH = 2000
 
 
+def _mnestic_version(module) -> str:
+    """Installed distribution version; the extension module has no __version__."""
+    try:
+        from importlib.metadata import version  # noqa: PLC0415
+
+        return version("mnestic")
+    except Exception:  # noqa: BLE001
+        return getattr(module, "__version__", "") or ""
+
+
 class MnesticAdapter(Adapter):
     name = "mnestic"
     thread_safe = True  # CozoDbPy releases the GIL on run_script
@@ -57,7 +67,7 @@ class MnesticAdapter(Adapter):
         self._backend = backend
         self._db = mnestic.CozoDbPy(backend, path, "{}")
         try:
-            base = getattr(mnestic, "__version__", "") or ""
+            base = _mnestic_version(mnestic)
         except Exception:  # noqa: BLE001
             base = ""
         self.version = f"{base}({backend})" if base else f"({backend})"
@@ -269,6 +279,42 @@ class MnesticAdapter(Adapter):
                 "?[src, dst] <- $r :put link {src, dst}",
                 {"r": [[eid, cid] for eid in entity_ids]},
             )
+
+    # --- lifecycle axis --------------------------------------------------
+    def reopen(self, meta: WorkloadMeta, workdir: Path) -> None:
+        import mnestic  # noqa: PLC0415
+
+        backend = os.environ.get("MNESTIC_BACKEND", "sqlite").lower()
+        path = workdir / ("store.rocksdb" if backend == "rocksdb" else "store.db")
+        if not path.exists():
+            raise FileNotFoundError(path)
+        self.meta = meta
+        self.dim = meta.dim
+        self._dir = workdir
+        self._backend = backend
+        self._db = mnestic.CozoDbPy(backend, str(path), "{}")
+        base = _mnestic_version(mnestic)
+        self.version = f"{base}({backend})" if base else f"({backend})"
+
+    def update_memory(self, cid: str, text: str, vector) -> None:
+        self._run(
+            "?[cid, text, emb, kind] <- $r :put chunk {cid => text, emb, kind}",
+            {"r": [[cid, text, [float(x) for x in vector], chunk_kind(cid)]]},
+        )
+
+    def delete_memory(self, cid: str) -> None:
+        # One atomic script: drop the chunk's graph links (found through its mentions, so
+        # every lookup is keyed), its mentions, then the chunk with its index entries.
+        self._run(
+            "{?[src, dst] := *mention{cid: $cid, eid: src}, dst = $cid :rm link {src, dst}}"
+            "{?[cid, eid] := *mention{cid: $cid, eid}, cid = $cid :rm mention {cid, eid}}"
+            "{?[cid] <- [[$cid]] :rm chunk {cid}}",
+            {"cid": cid},
+        )
+
+    def has_memory(self, cid: str) -> bool:
+        rows = self._run("?[cid] := *chunk{cid: $cid}, cid = $cid", {"cid": cid}, True)["rows"]
+        return bool(rows)
 
     def teardown(self) -> None:
         try:
