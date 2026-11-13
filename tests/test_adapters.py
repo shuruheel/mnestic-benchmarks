@@ -24,6 +24,7 @@ _IMPORT = {
     "duckdb": "duckdb",
     "lancedb": "lancedb",
     "kuzu": "kuzu",
+    "relate": "relate",
 }
 
 

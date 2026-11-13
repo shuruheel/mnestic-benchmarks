@@ -1,0 +1,157 @@
+{
+  "meta": {
+    "name": "small",
+    "seed": 1234,
+    "dim": 384,
+    "k": 10,
+    "pool_n": 100,
+    "graph_hops": 2,
+    "rrf_k": 60.0,
+    "clusters": 64,
+    "n_entities": 10000,
+    "n_edges": 50000,
+    "n_chunks": 40000,
+    "n_queries": 1000,
+    "n_incremental": 200,
+    "real_embeddings": false
+  },
+  "environment": {
+    "python": "3.12.9",
+    "platform": "macOS-27.2-arm64-arm-64bit",
+    "processor": "arm"
+  },
+  "generated_at": "2026-11-13T01:19:02Z",
+  "results": [
+    {
+      "engine": "mnestic",
+      "version": "(sqlite)",
+      "scale": "small",
+      "capabilities": {
+        "vector": true,
+        "fts": true,
+        "graph": true,
+        "native_fusion": true,
+        "fusion_locus": "native",
+        "engines_needed": 1,
+        "embedded": true,
+        "transactional": true,
+        "time_travel": true,
+        "incremental_index": true,
+        "notes": "Single embedded engine for vector + full-text + Datalog graph; hybrid_search() fuses vector+FTS in one call; time-travel via Validity."
+      },
+      "ok": true,
+      "error": "",
+      "recall_at_k": 0.95575,
+      "recall_k": 10,
+      "ingest_rows": 349492,
+      "ingest_seconds": 8.044105540961027,
+      "ingest_rows_per_sec": 43446.968493932305,
+      "build_seconds": 7.241511165979318,
+      "disk_mb": 533.624267578125,
+      "build_peak_rss_mb": 880.59375,
+      "latency_ms": {
+        "p50": 36.73281247029081,
+        "p95": 50.15278159407898,
+        "p99": 57.97562427585944
+      },
+      "mean_latency_ms": 38.78080697206315,
+      "qps_serial": 25.78595130112631,
+      "qps_concurrent": 37.18834923541832,
+      "concurrency": 8,
+      "query_peak_rss_mb": 558.421875,
+      "avg_round_trips": 3,
+      "leg_latency_ms": {
+        "vector": {
+          "p50": 17.112875066231936,
+          "p95": 30.64158068737014,
+          "p99": 37.4005247815512
+        },
+        "fts": {
+          "p50": 16.658437438309193,
+          "p95": 17.769166943617165,
+          "p99": 21.43564044148661
+        },
+        "graph": {
+          "p50": 2.47908296296373,
+          "p95": 3.6362524318974465,
+          "p99": 4.08838658244349
+        },
+        "fusion": {
+          "p50": 0.0773329520598054,
+          "p95": 0.08350005373358727,
+          "p99": 0.09230530238710342
+        }
+      },
+      "n_queries": 400,
+      "native_fusion_latency_ms": {
+        "p50": 40.76552053447813,
+        "p95": 55.7411642454099,
+        "p99": 64.58836813690138
+      },
+      "native_fusion_recall": 0.8746666666666667,
+      "native_fusion_signals": 3,
+      "n_incremental": 200,
+      "incremental_upsert_ms": {
+        "p50": 17.29195797815919,
+        "p95": 41.11846277955919,
+        "p99": 49.08054676372566
+      },
+      "freshness_vector": 1.0,
+      "freshness_fts": 1.0,
+      "freshness_graph": 1.0,
+      "freshness_fused": 1.0,
+      "filtered_kind_rows": 756,
+      "filtered_prepare_seconds": 0.2297993750544265,
+      "filtered": {
+        "post_filter": {
+          "recall": 0.183,
+          "latency_ms": {
+            "p50": 14.691187476273626,
+            "p95": 22.271095844917,
+            "p99": 29.59995128912851
+          }
+        },
+        "search_filter_ef100": {
+          "recall": 1.0,
+          "latency_ms": {
+            "p50": 99.61495851166546,
+            "p95": 146.67076390469447,
+            "p99": 249.5017445122355
+          }
+        },
+        "search_filter_ef400": {
+          "recall": 1.0,
+          "latency_ms": {
+            "p50": 112.45777050498873,
+            "p95": 136.53481273795475,
+            "p99": 185.9416966303237
+          }
+        },
+        "search_filter_ef1600": {
+          "recall": 0.9975,
+          "latency_ms": {
+            "p50": 160.77208402566612,
+            "p95": 344.6400999731849,
+            "p99": 541.7834050452786
+          }
+        },
+        "partial_index": {
+          "recall": 0.9965,
+          "latency_ms": {
+            "p50": 8.909479016438127,
+            "p95": 9.835887170629574,
+            "p99": 14.067686138441765
+          }
+        },
+        "exact_scan": {
+          "recall": 1.0,
+          "latency_ms": {
+            "p50": 116.3479374954477,
+            "p95": 133.86214999482036,
+            "p99": 147.01349038514306
+          }
+        }
+      }
+    }
+  ]
+}

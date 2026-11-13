@@ -6,7 +6,8 @@ and **graph proximity** into a single ranked result.
 
 It compares [**mnestic**](https://github.com/shuruheel/mnestic) (a maintained fork of CozoDB,
 tuned as a substrate for agentic memory) against other embedded and server databases:
-**SQLite** (sqlite-vec + FTS5), **DuckDB** (VSS + FTS), **Kuzu**, **LanceDB**, and — in
+**SQLite** (sqlite-vec + FTS5), **DuckDB** (VSS + FTS), **Kuzu**, **LanceDB**, **Relate**
+(Neo4j Labs), and — in
 phase 2 — **Neo4j**, **Qdrant**, and **ArcadeDB**.
 
 > **Why this benchmark?** Most stores do *some* of vector / full-text / graph. Few do all
@@ -71,6 +72,8 @@ CI smoke-runs the embedded engines at the `tiny` scale on every push.
 | **fusion locus** | does the engine fuse natively, or in application code? |
 | **round-trips/query** | how many separate engine calls the fused query needs |
 | **graph-assisted** | flagged when a signal the engine can't do is supplied externally |
+| **lifecycle** | churn rejections and post-churn recall, reopen cost, SIGKILL durability of acknowledged writes, per-engine RSS (`hybrid-recall lifecycle`) |
+| **labelled quality** | nDCG@10 / Recall@100 on BEIR SciFact with real embeddings (`hybrid-recall quality`) |
 
 ## Layout
 
@@ -79,7 +82,7 @@ hybrid_recall/        the harness (workload, ground truth, metrics, runner, repo
 hybrid_recall/adapters/   one module per engine
 configs/scales.yaml   tiny / small / medium / large workload definitions
 docker/               docker-compose for the phase-2 server engines
-docs/                 METHODOLOGY.md, COMPARISON.md, RESULTS.md
+docs/                 METHODOLOGY.md, COMPARISON.md, RESULTS.md, HEAD-TO-HEAD.md
 ```
 
 ## License

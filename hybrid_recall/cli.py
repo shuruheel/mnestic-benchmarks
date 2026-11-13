@@ -109,6 +109,46 @@ def _do_report(path: Path, plots: bool) -> None:
     print(f"wrote {out} (from {path.name})", flush=True)
 
 
+def cmd_lifecycle(args: argparse.Namespace) -> int:
+    from . import lifecycle  # noqa: PLC0415
+
+    wdir = _workload_dir(args.scale)
+    if not (wdir / "meta.json").exists():
+        print(f"no workload at {wdir}. run `hybrid-recall gen --scale {args.scale}` first.", file=sys.stderr)
+        return 2
+    engines = args.engines.split(",")
+    workdir = Path(args.workdir) if args.workdir else (ROOT / ".bench_work" / f"lifecycle-{args.scale}")
+    workdir.mkdir(parents=True, exist_ok=True)
+    print(f"lifecycle: engines {engines} on scale '{args.scale}'", flush=True)
+    payload = lifecycle.run_suite(engines, wdir, workdir, trials=args.trials)
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    stamp = payload["generated_at"].replace(":", "").replace("-", "")
+    path = RESULTS / f"lifecycle-{args.scale}-{stamp}.json"
+    path.write_text(json.dumps(payload, indent=2))
+    (RESULTS / f"latest-lifecycle-{args.scale}.json").write_text(json.dumps(payload, indent=2))
+    md = lifecycle.render_markdown(payload)
+    print(md)
+    print(f"wrote {path}", flush=True)
+    return 0 if all(r.get("ok") for r in payload["results"]) else 1
+
+
+def cmd_quality(args: argparse.Namespace) -> int:
+    from . import quality  # noqa: PLC0415
+
+    engines = args.engines.split(",")
+    workdir = Path(args.workdir) if args.workdir else (ROOT / ".bench_work" / f"beir-{args.dataset}")
+    workdir.mkdir(parents=True, exist_ok=True)
+    payload = quality.run(args.dataset, engines, WORKLOADS, workdir)
+    RESULTS.mkdir(parents=True, exist_ok=True)
+    stamp = payload["generated_at"].replace(":", "").replace("-", "")
+    path = RESULTS / f"quality-{args.dataset}-{stamp}.json"
+    path.write_text(json.dumps(payload, indent=2))
+    (RESULTS / f"latest-quality-{args.dataset}.json").write_text(json.dumps(payload, indent=2))
+    print(quality.render_markdown(payload))
+    print(f"wrote {path}", flush=True)
+    return 0 if all(r.get("ok") for r in payload["results"]) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="hybrid-recall", description="Hybrid-recall benchmark suite")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -138,6 +178,19 @@ def main(argv: list[str] | None = None) -> int:
     rp.add_argument("--results", default="", help="path to a results JSON (default: latest)")
     rp.add_argument("--plots", action="store_true")
     rp.set_defaults(func=cmd_report)
+
+    lc = sub.add_parser("lifecycle", help="churn, reopen, crash-durability and memory axis")
+    lc.add_argument("--scale", default="small")
+    lc.add_argument("--engines", default="mnestic,relate")
+    lc.add_argument("--workdir", default="")
+    lc.add_argument("--trials", type=int, default=3)
+    lc.set_defaults(func=cmd_lifecycle)
+
+    qa = sub.add_parser("quality", help="labelled retrieval quality on a BEIR dataset")
+    qa.add_argument("--dataset", default="scifact")
+    qa.add_argument("--engines", default="mnestic,relate")
+    qa.add_argument("--workdir", default="")
+    qa.set_defaults(func=cmd_quality)
 
     args = p.parse_args(argv)
     return args.func(args)

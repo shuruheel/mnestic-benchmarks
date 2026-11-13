@@ -107,6 +107,43 @@ struggles with:
 These reframe the comparison from "fastest single-signal lookup" to "can this be one
 consistent, live agentic-memory substrate" — the question mnestic is actually built to win.
 
+## Lifecycle axis (`hybrid-recall lifecycle`)
+
+A store that answers warm reads well can still fail a long-lived agent. The lifecycle axis
+([`hybrid_recall/lifecycle.py`](../hybrid_recall/lifecycle.py)) runs each engine through
+four phases, **each in its own subprocess** so RSS is attributable to one engine and reopen
+is a genuinely new process:
+
+1. **Load**: ingest + build; vector recall@k vs the exact oracle on 200 queries.
+2. **Churn**: re-embed 10% of memories into a different cluster's neighbourhood (the hard
+   case for a graph index) and delete 5%, one write call each, timed. A rejected write is
+   counted by its error code and the run continues; the oracle keeps the old state for it,
+   and the harness checks that a rejected update did not lose its row. Then recall@k vs an
+   exact oracle **recomputed over the post-churn corpus**, plus the stale-hit rate (queries
+   whose top-k still contains a deleted memory).
+3. **Reopen**: a fresh process opens the closed store; open time, first-query latency,
+   steady latency, recall (must match post-churn), RSS, and whether deleted memories
+   resurfaced. Process-cold, not OS-page-cache-cold.
+4. **Crash**: a writer acknowledges single-memory writes, appending each id to an fsync'd
+   file *after* the engine call returns, and is SIGKILLed at a random moment (the kill window
+   starts at the first acknowledged write). A fresh process reopens the store and counts
+   acknowledged writes that are missing. Repeated three times. This tests process-crash
+   durability, not power loss. Both engines run fully synchronous commits here (mnestic's
+   SQLite backend is `synchronous=FULL`; Relate's default durability mode is `full`).
+
+RSS is reported as a delta over the worker's baseline before the engine opens.
+
+## Labelled quality axis (`hybrid-recall quality`)
+
+The synthetic workload measures *fidelity* to an exact oracle, not relevance. The quality
+axis ([`hybrid_recall/quality.py`](../hybrid_recall/quality.py)) loads BEIR SciFact (5,183
+abstracts, 300 test queries with human relevance judgments; the archive is pinned by
+SHA-256), embeds it locally with fastembed `BAAI/bge-small-en-v1.5`, and runs every engine
+through its own adapter: vector leg, BM25 leg, canonical app-side RRF, and native fusion
+when offered. It reports nDCG@10 and Recall@100 against the qrels, alongside exact
+references (NumPy cosine; the harness's textbook BM25 over the same tokens), so an engine's
+approximation loss is separated from the retrieval method's ceiling.
+
 ## Reproduce it
 
 ```bash

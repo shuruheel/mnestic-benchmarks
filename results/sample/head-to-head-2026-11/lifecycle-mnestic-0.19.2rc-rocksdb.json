@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "name": "small",
+    "seed": 1234,
+    "dim": 384,
+    "k": 10,
+    "pool_n": 100,
+    "graph_hops": 2,
+    "rrf_k": 60.0,
+    "clusters": 64,
+    "n_entities": 10000,
+    "n_edges": 50000,
+    "n_chunks": 40000,
+    "n_queries": 1000,
+    "n_incremental": 200,
+    "real_embeddings": false
+  },
+  "environment": {
+    "python": "3.12.9",
+    "platform": "macOS-27.2-arm64-arm-64bit",
+    "backend_env": {
+      "MNESTIC_BACKEND": "rocksdb"
+    }
+  },
+  "generated_at": "2026-11-13T00:53:26Z",
+  "params": {
+    "queries": 200,
+    "update_frac": 0.1,
+    "delete_frac": 0.05,
+    "trials": 3
+  },
+  "results": [
+    {
+      "engine": "mnestic",
+      "ok": true,
+      "load": {
+        "version": "(rocksdb)",
+        "n_chunks": 40000,
+        "baseline_rss_mb": 347.0,
+        "ingest_seconds": 5.882091542007402,
+        "build_seconds": 6.467295999987982,
+        "disk_mb_after_build": 97.1131067276001,
+        "rss_after_build_mb": 642.40625,
+        "build_peak_rss_mb": 658.40625,
+        "pre_churn": {
+          "recall": 0.9935,
+          "latency_ms": {
+            "p50": 15.457729052286595,
+            "p95": 22.654958337079727,
+            "p99": 27.776309007313092
+          }
+        },
+        "churn": {
+          "updates": 4000,
+          "deletes": 2000,
+          "updates_rejected": 0,
+          "deletes_rejected": 0,
+          "rejections_by_code": {
+            "update": {},
+            "delete": {}
+          },
+          "update_ms": {
+            "p50": 36.887979542370886,
+            "p95": 138.1952231749892,
+            "p99": 257.55810995120555
+          },
+          "delete_ms": {
+            "p50": 78.04527098778635,
+            "p95": 237.48971874592826,
+            "p99": 663.0091558734412
+          }
+        },
+        "post_churn": {
+          "recall": 0.994,
+          "latency_ms": {
+            "p50": 61.44187552854419,
+            "p95": 71.2135232519358,
+            "p99": 94.75540866958909
+          },
+          "stale_hit_queries": 0,
+          "stale_hit_rate": 0.0
+        },
+        "rss_after_churn_mb": 207.9375,
+        "close_seconds": 0.004360417020507157,
+        "disk_mb_after_close": 123.28661251068115,
+        "peak_rss_mb": 695.828125
+      },
+      "reopen": {
+        "baseline_rss_mb": 34.0,
+        "open_seconds": 0.16978445905260742,
+        "rss_after_open_mb": 71.390625,
+        "first_query_ms": 70.43891598004848,
+        "rss_after_first_query_mb": 96.5,
+        "steady": {
+          "recall": 0.994,
+          "latency_ms": {
+            "p50": 60.3252294822596,
+            "p95": 67.34623305383134,
+            "p99": 90.14418994076547
+          }
+        },
+        "rss_after_queries_mb": 120.84375,
+        "deleted_resurrected": 0,
+        "peak_rss_mb": 120.859375
+      },
+      "crash": [
+        {
+          "open_ok": true,
+          "open_seconds": 0.022126999916508794,
+          "acked": 12,
+          "lost": 0,
+          "lost_sample": [],
+          "first_ack_s": 0.06575470801908523,
+          "kill_after_first_ack_s": 0.9857491472497435,
+          "killed_mid_write": true,
+          "acked_writes_per_s": 11.15902563110522
+        },
+        {
+          "open_ok": true,
+          "open_seconds": 0.024310374981723726,
+          "acked": 12,
+          "lost": 0,
+          "lost_sample": [],
+          "first_ack_s": 0.04500241600908339,
+          "kill_after_first_ack_s": 0.7262737608867529,
+          "killed_mid_write": true,
+          "acked_writes_per_s": 15.145803954929358
+        },
+        {
+          "open_ok": true,
+          "open_seconds": 0.02198099996894598,
+          "acked": 17,
+          "lost": 0,
+          "lost_sample": [],
+          "first_ack_s": 0.07275737496092916,
+          "kill_after_first_ack_s": 1.4764017095597806,
+          "killed_mid_write": true,
+          "acked_writes_per_s": 10.837158949626744
+        }
+      ]
+    }
+  ]
+}
