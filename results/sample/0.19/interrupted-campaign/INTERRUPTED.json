@@ -1,0 +1,30 @@
+{
+  "reason": "Concurrent native compiler jobs from other sessions invalidate timing; no acceptance claims",
+  "timestamp": 1793895937.8671749,
+  "process_snapshot": [
+    {
+      "pid": 79619,
+      "parent": 79616,
+      "kind": "compiler/build"
+    },
+    {
+      "pid": 88011,
+      "parent": 87993,
+      "kind": "compiler/build"
+    },
+    {
+      "pid": 92084,
+      "parent": 88284,
+      "kind": "compiler/build"
+    },
+    {
+      "pid": 92095,
+      "parent": 88284,
+      "kind": "compiler/build"
+    }
+  ],
+  "terminated_campaign_pids": [
+    87459,
+    87513
+  ]
+}

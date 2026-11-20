@@ -1,0 +1,94 @@
+{
+  "harness_sha": "0bf941b5bd9f82bcbb984b985f683d32be1b5679",
+  "candidate_sha": "0148693b",
+  "command": [
+    "scripts/mnestic_019_supervise.py",
+    "--root",
+    "/tmp/mnestic-019-campaign-a",
+    "--candidate-sha",
+    "0148693b",
+    "--baseline-wheel",
+    "/tmp/mnestic-019-released/mnestic-0.18.0-cp37-abi3-macosx_11_0_arm64.whl",
+    "--candidate-wheel",
+    "/tmp/mnestic-019-release-wheels/mnestic-0.18.0-cp37-abi3-macosx_11_0_arm64.whl",
+    "--baseline-python",
+    "/tmp/mnestic-019-bench-baseline/bin/python",
+    "--candidate-python",
+    "/tmp/mnestic-019-bench-candidate/bin/python"
+  ],
+  "run_cap_seconds": 7200,
+  "plan": [
+    {
+      "name": "sqlite-1234-baseline",
+      "backend": "sqlite",
+      "seed": 1234,
+      "build": "baseline"
+    },
+    {
+      "name": "sqlite-1234-candidate",
+      "backend": "sqlite",
+      "seed": 1234,
+      "build": "candidate"
+    },
+    {
+      "name": "sqlite-1235-candidate",
+      "backend": "sqlite",
+      "seed": 1235,
+      "build": "candidate"
+    },
+    {
+      "name": "sqlite-1235-baseline",
+      "backend": "sqlite",
+      "seed": 1235,
+      "build": "baseline"
+    },
+    {
+      "name": "sqlite-1236-baseline",
+      "backend": "sqlite",
+      "seed": 1236,
+      "build": "baseline"
+    },
+    {
+      "name": "sqlite-1236-candidate",
+      "backend": "sqlite",
+      "seed": 1236,
+      "build": "candidate"
+    },
+    {
+      "name": "rocksdb-1234-baseline",
+      "backend": "rocksdb",
+      "seed": 1234,
+      "build": "baseline"
+    },
+    {
+      "name": "rocksdb-1234-candidate",
+      "backend": "rocksdb",
+      "seed": 1234,
+      "build": "candidate"
+    },
+    {
+      "name": "rocksdb-1235-candidate",
+      "backend": "rocksdb",
+      "seed": 1235,
+      "build": "candidate"
+    },
+    {
+      "name": "rocksdb-1235-baseline",
+      "backend": "rocksdb",
+      "seed": 1235,
+      "build": "baseline"
+    },
+    {
+      "name": "rocksdb-1236-baseline",
+      "backend": "rocksdb",
+      "seed": 1236,
+      "build": "baseline"
+    },
+    {
+      "name": "rocksdb-1236-candidate",
+      "backend": "rocksdb",
+      "seed": 1236,
+      "build": "candidate"
+    }
+  ]
+}

@@ -64,10 +64,13 @@ they support; an engine that lacks a signal (e.g. LanceDB has no graph) contribu
 ranking for it and loses the recall that signal would have provided. That is the point, and
 it is recorded via the capability matrix (`graph`, `fusion_locus`, `engines_needed`).
 
-`native_hybrid` — a single-call vector+FTS fusion offered by some engines (mnestic's
-`hybrid_search`, LanceDB's RRF reranker) — is timed and reported **separately** for
-latency/ergonomics. It is *not* used in the scored recall comparison, to keep that
-comparison apples-to-apples.
+`native_hybrid` is reported separately, with its actual signal count and recall
+against the shared oracle. The current Mnestic adapter includes vector, FTS and
+a graph leg in one call. Other adapters may supply only two signals. The May 31
+results already scored native recall; the earlier wording here saying otherwise
+was stale. Native and decomposed paths can have different candidate/tie semantics,
+so latency must always be read alongside recall. The 0.19 paired protocol is in
+[0.19-CAMPAIGN.md](0.19-CAMPAIGN.md).
 
 ## What is measured
 

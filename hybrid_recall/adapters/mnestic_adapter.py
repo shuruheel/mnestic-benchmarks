@@ -77,11 +77,6 @@ class MnesticAdapter(Adapter):
         )
         self._run(":create edge { src: String, dst: String }")
         self._run(":create mention { cid: String, eid: String }")
-        # Unified traversal relation for the native 3-way hybrid_search graph leg: entity↔entity
-        # edges (both directions) + entity→chunk mentions (one-way, so chunks are leaves). A
-        # chunk's hop from a seed entity is then (entity-hop + 1) — monotonic with the oracle's
-        # entity-hop ordering — so max_hops = graph_hops + 1 reaches all in-range chunks.
-        self._run(":create link { src: String, dst: String }")
 
     def _run(self, q: str, params: dict | None = None, immutable: bool = False):
         return self._db.run_script(q, params or {}, immutable)
@@ -109,11 +104,6 @@ class MnesticAdapter(Adapter):
         mentions = [[c.id, eid] for c in wl.chunks for eid in c.entity_ids]
         self._put_pairs("?[cid,eid] <- $r :put mention {cid,eid}", mentions)
         rows += len(mentions)
-        # link relation for the native graph leg: entity edges both directions + entity->chunk
-        link = [[e.src, e.dst] for e in wl.edges] + [[e.dst, e.src] for e in wl.edges]
-        link += [[eid, cid] for cid, eid in mentions]
-        self._put_pairs("?[src,dst] <- $r :put link {src,dst}", link)
-        rows += len(link)
         return IngestStats(rows=rows, seconds=time.perf_counter() - t0)
 
     def _put_pairs(self, script: str, pairs: list[list[str]]) -> None:
@@ -235,8 +225,8 @@ class MnesticAdapter(Adapter):
         return [cid for cid, _ in ranked[: spec.pool_n]]
 
     def native_hybrid(self, spec: QuerySpec) -> list[str] | None:
-        # Native 3-way fusion in ONE call (Bet 1a): vector + FTS + a graph-proximity leg
-        # over the unified `link` relation, all RRF-fused inside the engine.
+        # Native 3-way fusion in ONE call: vector + FTS + undirected k-hop entity
+        # traversal mapped through `mention` to chunk ids, RRF-fused inside the engine.
         res = self._db.hybrid_search(
             {
                 "relation": "chunk",
@@ -251,12 +241,16 @@ class MnesticAdapter(Adapter):
                 "graph_legs": [
                     {
                         "label": "graph",
-                        "edge_relation": "link",
+                        "edge_relation": "edge",
                         "from_col": "src",
                         "to_col": "dst",
                         "seeds": [spec.seed_entity],
-                        "max_hops": spec.hops + 1,  # +1 for the entity->chunk leaf hop
-                        "undirected": False,  # edges already stored both ways; chunks stay leaves
+                        "max_hops": spec.hops,
+                        "undirected": True,
+                        "target_relation": "mention",
+                        "target_node_col": "eid",
+                        "target_id_col": "cid",
+                        "limit": spec.pool_n,
                     }
                 ],
                 "rrf_k": spec.rrf_k,
@@ -274,10 +268,6 @@ class MnesticAdapter(Adapter):
             self._run(
                 "?[cid, eid] <- $r :put mention {cid, eid}",
                 {"r": [[cid, eid] for eid in entity_ids]},
-            )
-            self._run(
-                "?[src, dst] <- $r :put link {src, dst}",
-                {"r": [[eid, cid] for eid in entity_ids]},
             )
 
     # --- lifecycle axis --------------------------------------------------

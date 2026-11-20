@@ -1,0 +1,2713 @@
+{
+  "manifest": {
+    "experiment": "019-pr65-isolated-filter-reproducer-v1",
+    "created_utc": "2026-11-05T13:33:11.146260+00:00",
+    "package_version": "0.18.0",
+    "installed_extension_sha256": {
+      "mnestic.abi3.so": "9225c1d969d1562010082c794b3841520ba8386875b6b132b51374b7884610f4"
+    },
+    "python": "3.13.7",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "harness_head": "70864ae603f1059994a8f5010d7c0d7feff17b27",
+    "harness_status": "?? scripts/mnestic_019_filter_repro.py\n",
+    "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "script_sha256": "3e923bf962dc213926157f14d9d0bfd105b98853d50219a6310d3122c62855d5",
+    "source_pr": "https://github.com/shuruheel/mnestic/pull/65",
+    "source_sha": "e7fba2abf4b88ce153e880ca2e8b022af391826d",
+    "fixture": {
+      "schema": ":create pt {k: Int => v: <F32; 2>}",
+      "insert": "?[k, v] := k in int_range(25), v = vec([k, k]) :put pt {k => v}",
+      "index": "::hnsw create pt:i {fields: [v], dim: 2, dtype: F32, distance: L2, m: 16, ef_construction: 20}",
+      "cases": {
+        "rare": [
+          20,
+          22,
+          24
+        ],
+        "empty": [],
+        "fewer_than_k": [
+          24
+        ]
+      }
+    },
+    "limitations": [
+      "Tiny fixture only; not the E2 selectivity sweep or release-quality gate.",
+      "No visit counters, shared deadline, or statement memory bound measured.",
+      "Elapsed times are smoke observations, not benchmark claims; no warmup.",
+      "HNSW topology RNG seed is not controlled; each repetition builds a fresh database.",
+      "Installed extension hash is recorded; wheel hash and engine source provenance need separate qualification."
+    ],
+    "baseline_wheel_verification": {
+      "filename": "mnestic-0.18.0-cp37-abi3-macosx_11_0_arm64.whl",
+      "sha256": "1c042b400ad3ad464e1c6a0923e4f933b36f59d367dddbb3bc2866d57cbe7abc",
+      "installed_extension_matches": true,
+      "verification": "Downloaded mnestic==0.18.0 with pip; extracted extension SHA256 matches the extension used for this run."
+    }
+  },
+  "records": [
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 908709
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 768083
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 881375
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 939958
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 7469333
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1226708
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1452708
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1692291
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 529167
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 313500
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1075541
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 3271791
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 8340667
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 6127792
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 3118583
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 904750
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 301917
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 255875
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 775958
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 791625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 781625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 892625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1276792
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 933125
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 554625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 511833
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 2071833
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 6517709
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 3161250
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 30569375
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 11203083
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1754542
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 855416
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 921166
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 2663792
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 2857375
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1190875
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1419875
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 978416
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 954084
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 313959
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 276375
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 5932459
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1536958
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 3935042
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1431083
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 2795916
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 5122209
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1121625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1173958
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 4264792
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1826125
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 3575209
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 2123792
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 2798708
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1689333
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 635917
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 344084
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1559125
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1010916
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 2414250
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1656875
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 6199166
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1764334
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 789666
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1174917
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 2323625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 2659833
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 3333833
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 8191333
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1773625
+    },
+    {
+      "backend": "sqlite",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1720833
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1110000
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 886792
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1019500
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 831875
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1912292
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1909542
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 5169708
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "rare",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 874625
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 358625
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 155291
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 572750
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 693042
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1329000
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 12043084
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 8799708
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "empty",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 2471833
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1802833
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1009708
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 2676250
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 2777167
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 826083
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 389542
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 800375
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 0,
+      "case": "fewer_than_k",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 991083
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1996583
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 539500
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 547875
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 371334
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 295458
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 288375
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 907250
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "rare",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 618542
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 148625
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 355500
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 967125
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1299958
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 508958
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1247167
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1022167
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "empty",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1137250
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 635917
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 833667
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 406500
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 527250
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 369375
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1252500
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 680000
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 1,
+      "case": "fewer_than_k",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 311459
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 3027542
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 889333
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 418250
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1476042
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1214375
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1275875
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 1004875
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "rare",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 20 || k == 22 || k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        20,
+        22,
+        24
+      ],
+      "truth": [
+        20,
+        22,
+        24
+      ],
+      "returned": [
+        20,
+        22,
+        24
+      ],
+      "returned_count": 3,
+      "recall": 1.0,
+      "elapsed_ns": 941583
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1374375
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1471709
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 887625
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 1850375
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 5826833
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 2517208
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 687292
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "empty",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: false}, q = vec([0.0, 0.0])",
+      "eligible": [],
+      "truth": [],
+      "returned": [],
+      "returned_count": 0,
+      "recall": null,
+      "elapsed_ns": 2139917
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 3,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 714292
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 5,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [],
+      "returned_count": 0,
+      "recall": 0.0,
+      "elapsed_ns": 1316666
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 50,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 3590125
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 100,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1830125
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 200,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1209042
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 400,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1333500
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 800,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 1993458
+    },
+    {
+      "backend": "rocksdb",
+      "repetition": 2,
+      "case": "fewer_than_k",
+      "ef": 1600,
+      "query": "?[k] := ~pt:i{k | query: q, k: 3, ef: $ef, filter: k == 24}, q = vec([0.0, 0.0])",
+      "eligible": [
+        24
+      ],
+      "truth": [
+        24
+      ],
+      "returned": [
+        24
+      ],
+      "returned_count": 1,
+      "recall": 1.0,
+      "elapsed_ns": 2883834
+    }
+  ]
+}
